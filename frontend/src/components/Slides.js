@@ -30,26 +30,25 @@ import './slideshow.css';
 
 
 
-const imgUrls = [[]];
-//const imgUrlsTemp = [];
-const folderList = [];
-
-
 function copyImage(){
-    var img=document.getElementById("currentImage");
-	if (window.getSelection().empty) { 
-		window.getSelection().empty();
-	} else if (window.getSelection().removeAllRanges) {  
-		window.getSelection().removeAllRanges();
+	try{
+		var img=document.getElementById("currentImage");
+		if (window.getSelection().empty) { 
+			window.getSelection().empty();
+		} else if (window.getSelection().removeAllRanges) {  
+			window.getSelection().removeAllRanges();
+		}
+		var r = document.createRange();
+		r.setStartBefore(img);
+		r.setEndAfter(img);
+		r.selectNode(img);
+		window.getSelection().addRange(r);
+		document.execCommand('Copy');
+		window.getSelection().removeRange(r);
+		displayCopiedWindow();
 	}
-    var r = document.createRange();
-    r.setStartBefore(img);
-    r.setEndAfter(img);
-    r.selectNode(img);
-    window.getSelection().addRange(r);
-    document.execCommand('Copy');
-	window.getSelection().removeRange(r);
-	displayCopiedWindow();
+	catch(err5){
+	}
 }
 
 function displayCopiedWindow() {
@@ -61,84 +60,89 @@ function displayCopiedWindow() {
   }
 }
 
-
-function clearArray(){
-		try {
-			for(var i=0; i<imgUrls.length; i++){
-				imgUrls.pop();
-			}
-			
-		}
-		catch(err) {
-		}
-		
-}
-
-function getFilesList(courseId){ 
-		var storage = firebase.app().storage("gs://iclicker-web-c0d76.appspot.com");
-		var storageRef = storage.ref();
-		var listRef = storageRef.child("/uploadtest/"+courseId+"/");
-		
-		
-		listRef.listAll().then(function(res) {
-		  res.prefixes.forEach(function(folderRef) {
-			
-			
-			folderRef.listAll().then(function(res2) {
-				var tempArray=[];
-			  res2.items.forEach(function(itemRef) {
-				  //console.log(i+" "+itemRef);
-				  itemRef.getDownloadURL().then(function(url) {tempArray.push(url.toString());}).catch(function(error) {});
-			  });
-			  imgUrls.push(tempArray);
-			}).catch(function(error) {});
-		  });
-		}).catch(function(error2) {
-		});
-}
-
 class Slides extends React.Component {
    constructor (props) {
 		super(props);
 		
 		this.state = {
+			imgUrls: [[]],
 			currentImageIndex: 0,
 			currentFolder:1,
-			isActive:false
+			isActive:false,
+			currentID: this.props.match.params.courseID,
+			isLoaded: false
 		};
-		//clearArray();
-		//getFilesList(this.props.match.params.courseID);
 		
-		//getFoldersList(this.props.match.params.courseID);
 		this.handleShowSlides = this.handleShowSlides.bind(this);
 		this.handleHideSlides = this.handleHideSlides.bind(this);
-		this.nextSlide = this.nextSlide.bind(this);
-		this.previousSlide = this.previousSlide.bind(this);
-		this.nextLecture = this.nextLecture.bind(this);
-		this.previousLecture = this.previousLecture.bind(this);
+		//this.nextSlide = this.nextSlide.bind(this);
+		//this.previousSlide = this.previousSlide.bind(this);
+		//this.nextLecture = this.nextLecture.bind(this);
+		//this.previousLecture = this.previousLecture.bind(this);
+		
 	}
 	
 	
 	
-	
+getFilesList(){		
+		var storage = firebase.app().storage("gs://iclicker-web-c0d76.appspot.com");
+		var storageRef = storage.ref();
+		var listRef = storageRef.child("/uploadtest/"+this.props.match.params.courseID+"/");	
+		this.setState({
+			isLoaded: false
+		});		
+				
+		listRef.listAll().then(res => {
+		  res.prefixes.forEach(folderRef => {
+			let tempArray=[];
+			folderRef.listAll().then(res2 => {
+			  res2.items.forEach(itemRef => {
+				  itemRef.getDownloadURL().then(function(url) {tempArray.push(url.toString());}).catch(function(error) {});
+			  }); 
+			}).catch(function(error) {});
+			let newArray = [...this.state.imgUrls];
+			  newArray.push(tempArray);
+			  this.setState({
+				imgUrls: newArray,
+				});
+		  });
+		this.setState({
+			isLoaded: true
+		});
+		}).catch(function(error2) {
+		});
+		
+}
+clearList(){ 	
+	this.setState({
+		imgUrls: [[]],
+	});	
+}	
+getStats(){ 
+	console.log(this.state.imgUrls.length);
+	for(let i=0; i<this.state.imgUrls.length; i++){
+		console.log(this.state.imgUrls[i].length);
+	}
+}
+
 handleShowSlides = () => {
+	
 		try {
-			getFilesList(this.props.match.params.courseID);		
+			//getFilesList(this.props.match.params.courseID);	
 			this.setState({
 			  isActive: true,
 			  currentImageIndex: 0,
 			  currentFolder:1
 			});
 		}
-		catch(err) {
-		  
+		catch(err) { 
 		}
 		
 	  };
 
   handleHideSlides = () => {
 		try {
-			clearArray();
+			
 			this.setState({
 			  isActive: false,
 			  currentImageIndex: 0,
@@ -152,22 +156,20 @@ handleShowSlides = () => {
 	
 	
 	
-	previousSlide () {
-		
-		//console.log(imgUrls.length);
-		//orderList();
+	previousSlide = () => {
+		//this.getStats();
 		try {
 			  var folderNum=0;
 			try{
-				for(var i=1; i<imgUrls.length; i++){
-					if(imgUrls[i][0].includes("Lecture"+this.state.currentFolder+"%")){
+				for(var i=1; i<this.state.imgUrls.length; i++){
+					if(this.state.imgUrls[i][0].includes("Lecture"+this.state.currentFolder+"%")){
 						folderNum=i;		
 					}
 				}
 			}
 			catch(err){}
 			
-			const lastIndex = imgUrls[folderNum].length - 1;
+			const lastIndex = this.state.imgUrls[folderNum].length - 1;
 			const { currentImageIndex } = this.state;
 			const shouldResetIndex = currentImageIndex === 0;
 			const index =  shouldResetIndex ? lastIndex : currentImageIndex - 1;
@@ -183,20 +185,20 @@ handleShowSlides = () => {
 		
 	}
 	
-	nextSlide () {
-		
+	nextSlide = () => {
+		//this.getStats();
 		try {
 			  var folderNum=0;
 			try{
-				for(var i=1; i<imgUrls.length; i++){
-					if(imgUrls[i][0].includes("Lecture"+this.state.currentFolder+"%")){
+				for(var i=1; i<this.state.imgUrls.length; i++){
+					if(this.state.imgUrls[i][0].includes("Lecture"+this.state.currentFolder+"%")){
 						folderNum=i;		
 					}
 				}
 			}
 			catch(err){}
 			
-			const lastIndex = imgUrls[folderNum].length - 1;
+			const lastIndex = this.state.imgUrls[folderNum].length - 1;
 			const { currentImageIndex } = this.state;
 			const shouldResetIndex = currentImageIndex === lastIndex;
 			const index =  shouldResetIndex ? 0 : currentImageIndex + 1;
@@ -205,16 +207,13 @@ handleShowSlides = () => {
 				currentImageIndex: index
 			});
 		}
-		catch(err) {
-		  
-		}
-		
-		
+		catch(err) { 
+		}	
 	}
 	
-	previousLecture () {
+	previousLecture = () => {
 		
-		const lastIndex = imgUrls.length - 1;
+		const lastIndex = this.state.imgUrls.length - 1;
 		const { currentFolder } = this.state;
 		const shouldResetIndex = currentFolder === 0;
 		var index =  shouldResetIndex ? lastIndex : currentFolder - 1;
@@ -231,10 +230,8 @@ handleShowSlides = () => {
 		
 	}
 	
-	nextLecture () {
-		
-		
-		const lastIndex = imgUrls.length - 1;
+	nextLecture = () => {
+		const lastIndex = this.state.imgUrls.length - 1;
 		const { currentFolder } = this.state;
 		const shouldResetIndex = currentFolder === lastIndex;
 		var index =  shouldResetIndex ? 0 : currentFolder + 1;
@@ -255,42 +252,76 @@ handleShowSlides = () => {
 		copyImage();
 	}
 	
+	getSlideNum(currentFolder){
+		var folderNum=0;
+			
+			for(var i=1; i<this.state.imgUrls.length; i++){
+				try{
+					if(this.state.imgUrls[i][0].includes("Lecture"+currentFolder+"%")){
+						folderNum=i;		
+					}
+				}catch(err){}
+			}
+		return this.state.imgUrls[folderNum].length;
+			
+	}
 	
-	getCurrentImage(currentFolder, currentScreenshot){
+	
+	getCurrentImage = (currentFolder, currentScreenshot) =>{
 		currentScreenshot+=1;
 		//console.log(imgUrls.length+"  "+imgUrls[this.state.currentFolder]);
 		try {
 			  var folderNum=0;
 			try{
-				for(var i=1; i<imgUrls.length; i++){
-					if(imgUrls[i][0].includes("Lecture"+currentFolder+"%")){
+				for(var i=1; i<this.state.imgUrls.length; i++){
+					if(this.state.imgUrls[i][0].includes("Lecture"+currentFolder+"%")){
 						folderNum=i;		
 					}
 				}
-				document.getElementById("lectureNum").innerHTML = "Lecture "+currentFolder+" of "+(imgUrls.length-1) ;
-				document.getElementById("slideNum").innerHTML = "Slide "+currentScreenshot+" of "+imgUrls[folderNum].length ;
+				
 			}
 			catch(err){}
 			
+			
 			var h=0;
-			for(var i=0; i<imgUrls[folderNum].length; i++){
-				if(imgUrls[folderNum][i].includes("screenshot"+currentScreenshot+".jpg")){
+			for(var i=0; i<this.state.imgUrls[folderNum].length; i++){
+				if(this.state.imgUrls[folderNum][i].includes("screenshot"+currentScreenshot+".jpg")){
 					h=i;		
 				}
 			}
-			return imgUrls[folderNum][h];	
+			return this.state.imgUrls[folderNum][h];	
 		}
 		catch(err) {
 			return null;	
 		}
 		
 	}	
+	getFileStatus(s, m){
+		if(s){
+			return m;
+		}
+		else{
+			return "Loading Slides...";
+		}
+		
+	}
     componentDidMount() {
-	
+		this.getFilesList();
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-      
+		
+      if(this.props.match.params.courseID != this.state.currentID){
+		this.setState({
+			imgUrls: [[]],
+			currentImageIndex: 0,
+			currentFolder:1,
+			isActive:false,
+			currentID: this.props.match.params.courseID,
+		});
+		this.clearList();
+		this.getFilesList();
+	  }
     }
 	
 
@@ -299,29 +330,24 @@ handleShowSlides = () => {
 		if (this.state.isActive) {
 				return (
 					<div className={mobile ? null : this.props.classes.mainPage}>
-					
 						<div className={this.props.classes.appBarSpacer}/>	
 						
-						<div class="twoButton">
-							<button onClick={this.handleHideSlides}>Hide Slides</button>
+						<div className="twoButton">
+							<button onClick={this.handleHideSlides} id="show_hide">{this.getFileStatus(this.state.isLoaded, "Hide Slides")}</button>
 							<button onClick={this.copyImageToClipboard}>Copy To Clipboard</button>
 						</div>
-						
-						
-							
-							
 							<div className="slideshow-container">
 							
-								<div className="slideNum" id="lectureNum">Lecture 1</div>
+								<div className="slideNum" id="lectureNum">Lecture {this.state.currentFolder} of {this.state.imgUrls.length-1}</div>
 								<Arrow direction="left" clickFunction={ this.previousLecture } glyph="&#10094;" />
 								<Arrow direction="right" clickFunction={ this.nextLecture } glyph="&#10095;" />
 							
 							</div>	
 							
 							<div className="slideshow-container">
-								<div className="slideNum" id="slideNum">Slide 1</div>
+								<div className="slideNum" id="slideNum">Slide {this.state.currentImageIndex+1} of {this.getSlideNum(this.state.currentFolder)}</div>
 								<Arrow direction="left" clickFunction={ this.previousSlide } glyph="&#10094;" />
-								<div class="imageCopied" id="imageCopied">Image copied</div>
+								<div className="imageCopied" id="imageCopied">Image copied</div>
 								<img src={this.getCurrentImage(this.state.currentFolder, this.state.currentImageIndex)} onClick={this.copyImageToClipboard} id="currentImage" style={{width: '100%', verticalAlign: 'middle'}}/>
 								<Arrow direction="right" clickFunction={ this.nextSlide } glyph="&#10095;" />
 							
@@ -331,13 +357,24 @@ handleShowSlides = () => {
 				);
 		}
 		else {
+			if((this.state.imgUrls.length-1)==0){
 				return (
 					<div className={mobile ? null : this.props.classes.mainPage}>
 					
 						<div className={this.props.classes.appBarSpacer}/>	
-						<button onClick={this.handleShowSlides} className="show_button">Show Slides</button>
+						<button className="show_button" id="show_hide">{this.getFileStatus(this.state.isLoaded, "No Slides Available")}</button>
 					</div>
 				);
+			}
+			else{
+			return (
+					<div className={mobile ? null : this.props.classes.mainPage}>
+					
+						<div className={this.props.classes.appBarSpacer}/>	
+						<button onClick={this.handleShowSlides} className="show_button" id="show_hide">{this.getFileStatus(this.state.isLoaded, "View Slides")}</button>
+					</div>
+				);
+			}
 		}
     }
 }

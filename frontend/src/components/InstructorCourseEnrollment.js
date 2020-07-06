@@ -37,6 +37,7 @@ class InstructorCourseEnrollment extends Component {
 
         this.state = {
             studentsData: null,
+            deletedStudents: [],
         };
 
         this.studentFileRef = React.createRef();
@@ -236,7 +237,11 @@ class InstructorCourseEnrollment extends Component {
                             onRowDelete: oldData => new Promise(resolve => {
                                 let data = this.state.studentsData;
                                 data.splice(data.indexOf(oldData), 1);
-                                this.setState({studentsData: data});
+                                let deletedData = [...this.state.deletedStudents, oldData];
+                                this.setState({
+                                    studentsData: data,
+                                    deletedStudents: deletedData,
+                                });
 
                                 resolve();
                             })
@@ -309,18 +314,29 @@ class InstructorCourseEnrollment extends Component {
                     <Button
                         color="primary"
                         onClick={() => {
+                            this.props.openCtl(false);
+                        }}
+                    >
+                        Cancel
+                    </Button>
+
+                    <Button
+                        color="primary"
+                        onClick={() => {
                             let students = this.convertTableToStudents(this.state.studentsData, this.props.course.courseCategories);
+                            let deleted = this.convertTableToStudents(this.state.deletedStudents, this.props.course.courseCategories);
 
                             let data = {
                                 courseID: this.props.course.courseID,
                                 students: students,
+                                deleted: deleted
                             };
                             setCourseStudents(data);
 
                             this.props.openCtl(false)
                         }}
                     >
-                        OK
+                        Save
                     </Button>
                 </DialogActions>
             </Dialog>

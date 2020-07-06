@@ -60,7 +60,7 @@ class InstructorTopBar extends React.Component {
                     courseID: this.props.match.params.courseID,
                     action: course => {
                         let newCourses = Object.assign({}, this.props.courses);
-                        newCourses[this.props.match.params.courseID] = Object.assign(newCourses[this.props.match.params.courseID], course);
+                        newCourses[this.props.match.params.courseID] = Object.assign({}, newCourses[this.props.match.params.courseID], course);
                         this.props.changeCourses(newCourses);
 
                         if (this.props.match.params.pollID !== course.courseActivityPollID) {

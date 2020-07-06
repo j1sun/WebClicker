@@ -207,11 +207,15 @@ export const fetchCourses = (data) => {
 
             coursesRef.then(query => {
                 let courses = {};
+                let unsorted = [];
 
                 query.forEach((doc) => {
                     let course = getCourse(doc);
-                    courses[doc.id] = course;
+                    unsorted.push([doc.id, course]);
                 });
+
+                // Sort courses
+                unsorted.sort((a, b) => a[1]['courseName'].localeCompare(b[1]['courseName'])).map(course => courses[course[0]] = course[1]);
 
                 resolve(courses);
             }).catch(err => {
@@ -301,7 +305,7 @@ export const createCourse = (data) => {
                 courseActivityPollDisplay: false,
                 students: []
             }).then(course => {
-                resolve(course.id);
+                resolve(courseID);
             }).catch(err => {
                 console.log(err);
             });
@@ -317,7 +321,7 @@ export const createCourse = (data) => {
                 courseActivityPollLive: false,
                 courseActivityPollDisplay: false,
             }).then(course => {
-                resolve(course.id);
+                resolve(courseID);
             }).catch(err => {
                 console.log(err);
             });
@@ -351,9 +355,32 @@ export const fetchCourseStudents = (data) => {
 export const setCourseStudents = (data) => {
     let courseID = data.courseID;
     let students = data.students;
+    let deleted = data.deleted;
 
     return new Promise((resolve, reject) => {
         let promises = [];
+
+        for (let studentID in deleted) {
+            let promiseDeleteFromCourse = firebase.firestore().collection('courses').doc(courseID).collection('students').doc(studentID).delete();
+            promises.push(promiseDeleteFromCourse);
+            let promiseDeleteFromStudent = new Promise((resolve, reject) => {
+                firebase.firestore().collection('accounts').doc(studentID).get().then((studentSnapshot) => {
+                    let studentCourses = studentSnapshot.get('studentCourses');
+                    studentCourses.splice(studentCourses.indexOf(courseID), 1);
+                    resolve(studentCourses);
+                }).catch(err => {
+                    console.log(err);
+                })
+            }).then(studentCourses => {
+                return firebase.firestore().collection('accounts').doc(studentID).update({
+                    studentCourses: studentCourses,
+                });
+            }).catch(err => {
+                console.log(err);
+            });
+            promises.push(promiseDeleteFromStudent);
+        }
+
         for(let studentID in students) {
             let promise = firebase.firestore().collection('courses').doc(courseID).collection('students').doc(studentID).set({
                 studentID: students[studentID]['studentID'],
@@ -551,7 +578,7 @@ export const deactivatePoll = (data) => {
     return new Promise((resolve, reject) => {
         firebase.firestore().collection('courses').doc(courseID).update({
             courseActivityPollLive: false,
-            courseActivityPollDisplay: false,
+            courseActivityPollDisplay: false, // TODO: Don't do this? Would keep show/hide but is a design choice
         }).then(() => {
             resolve();
         }).catch(err => {

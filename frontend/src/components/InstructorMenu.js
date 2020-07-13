@@ -8,6 +8,7 @@ import Drawer from '@material-ui/core/Drawer'
 import Divider from '@material-ui/core/Divider';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
 import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
@@ -16,11 +17,15 @@ import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import MoreVertOutlinedIcon from '@material-ui/icons/MoreVertOutlined';
 import Menu from "@material-ui/core/Menu";
 import MenuItem from "@material-ui/core/MenuItem";
+import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 
 import {changeAccount, changeCourses} from "../redux";
 import {fetchCourses, signOut} from "../firebaseApi";
 import InstructorCourseSettings from "./InstructorCourseSettings";
 import InstructorCourseEnrollment from "./InstructorCourseEnrollment";
+import { blue } from '@material-ui/core/colors';
 
 const styles = theme => ({
     appBarSpacer: theme.mixins.toolbar,
@@ -46,8 +51,10 @@ class InstructorMenu extends Component {
             courseAnchorEl: null,
             courseSettingsOpen: false,
             courseEnrollmentOpen: false,
+            allCoursesShown: false,
         };
     }
+
 
     componentDidMount() {
         //console.log('InstructorMenu: componentDidMount', this.props);
@@ -119,9 +126,10 @@ class InstructorMenu extends Component {
                     <Divider/>
 
                     <List
-                        subheader={<ListSubheader>Courses</ListSubheader>}
+                        subheader={<ListSubheader>Active Courses</ListSubheader>}
                     >
                         {Object.values(this.props.courses).map(course =>
+                            course.isActive ? (
                             <ListItem
                                 key={course.courseName}
                                 button
@@ -148,6 +156,7 @@ class InstructorMenu extends Component {
                                     </IconButton>
                                 </ListItemSecondaryAction>
                             </ListItem>
+                            ) : null
                         )}
 
                         <ListItem
@@ -156,7 +165,58 @@ class InstructorMenu extends Component {
                                 this.setState({courseSettingsOpen: true})
                             }}
                         >
+                            <ListItemIcon>
+                                <AddCircleOutlineIcon />
+                            </ListItemIcon>
                             <ListItemText primary={'Add Course'} />
+                        </ListItem>
+
+                    </List>
+
+                    <List
+                        subheader={<ListSubheader>Inactive Courses</ListSubheader>}
+                    >
+                        {Object.values(this.props.courses).map(course =>
+                            this.state.allCoursesShown && (!course.isActive || course.isActive === undefined) ? (
+                            <ListItem
+                                key={course.courseName}
+                                button
+                                selected={this.props.match.params.courseID === course.courseID}
+                                onClick={() => {
+                                    this.props.history.push('/instructor/' + course.courseID);
+                                    if(mobile) {
+                                        this.props.openCtl(false);
+                                    }
+                                }}
+                            >
+                                <ListItemText primary={course.courseName} />
+
+                                <ListItemSecondaryAction>
+                                    <IconButton
+                                        onClick={(event) => {
+                                            this.setState({
+                                                course: course.courseID,
+                                                courseAnchorEl: event.currentTarget,
+                                            })
+                                        }}
+                                    >
+                                        <MoreVertOutlinedIcon/>
+                                    </IconButton>
+                                </ListItemSecondaryAction>
+                            </ListItem>
+                            ) : null
+                        )}
+
+                        <ListItem
+                            button
+                            onClick={() => {
+                                this.setState({allCoursesShown: !this.state.allCoursesShown})
+                            }}
+                        >
+                            <ListItemIcon>
+                                {this.state.allCoursesShown ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                            </ListItemIcon>
+                            <ListItemText primary={this.state.allCoursesShown ? 'Hide all' : 'Show all'} />
                         </ListItem>
                     </List>
 

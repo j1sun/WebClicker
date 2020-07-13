@@ -63,6 +63,7 @@ let initialState = {
          courseSessionID: 'testCourseSessionID',
          coursePollID: 'testCoursePollID',
          students: [],
+         isActive: boolean,
      };
      */
     courses: {},

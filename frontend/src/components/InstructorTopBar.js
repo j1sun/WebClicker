@@ -80,7 +80,7 @@ class InstructorTopBar extends React.Component {
                     }
                 },
             };
-            this.unListenCourseActivity = listenCourseActivity(data);
+            listenCourseActivity(data);
         }
     }
 
@@ -102,15 +102,13 @@ class InstructorTopBar extends React.Component {
                         }
                     },
                 };
-                this.unListenCourseActivity = listenCourseActivity(data);
+                listenCourseActivity(data);
             }
         }
     }
 
     componentWillUnmount() {
         //console.log('InstructorTopBar: componentWillUnmount');
-
-        this.unListenCourseActivity();
     }
 
     render() {

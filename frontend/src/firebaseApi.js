@@ -171,6 +171,7 @@ const getCourse = (doc) => {
     course['courseActivityPollLive'] = doc.get('courseActivityPollLive');
     course['courseActivityPollDisplay'] = doc.get('courseActivityPollDisplay');
     course['students'] = doc.get('students');
+    course['isActive'] = doc.get('isActive');
 
     return course;
 };
@@ -290,6 +291,7 @@ export const createCourse = (data) => {
     let courseCode = data.courseCode;
     let courseCategories = data.courseCategories;
     let courseInstructorID = data.courseInstructorID;
+    let isActive = data.isActive;
 
     return new Promise((resolve, reject) => {
         if (courseID == '') {
@@ -303,7 +305,8 @@ export const createCourse = (data) => {
                 courseActivityPollID: '',
                 courseActivityPollLive: false,
                 courseActivityPollDisplay: false,
-                students: []
+                students: [],
+                isActive: isActive,
             }).then(course => {
                 resolve(courseID);
             }).catch(err => {
@@ -320,6 +323,7 @@ export const createCourse = (data) => {
                 courseActivityPollID: '',
                 courseActivityPollLive: false,
                 courseActivityPollDisplay: false,
+                isActive: isActive,
             }).then(course => {
                 resolve(courseID);
             }).catch(err => {

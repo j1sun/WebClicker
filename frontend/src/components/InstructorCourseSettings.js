@@ -13,7 +13,9 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import FormControl from "@material-ui/core/FormControl";
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import InputLabel from "@material-ui/core/InputLabel";
+import Switch from "@material-ui/core/Switch";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
 import FormHelperText from "@material-ui/core/FormHelperText";
@@ -26,6 +28,11 @@ import {changeCourses} from "../redux";
 import { blue } from '@material-ui/core/colors';
 
 const styles = theme => ({
+    titleBar: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'baseline'
+    },
     courseCode: {
         display: 'flex',
         justifyContent: 'space-between',
@@ -49,6 +56,7 @@ class InstructorCourseSettings extends React.Component {
             name: this.props.course === undefined ? '' : this.props.course.courseName,
             quarter: this.props.course === undefined ? '' : this.props.course.courseQuarter,
             courseCode: this.props.course === undefined ? "None" : (this.props.course.courseCode === undefined ? '' : this.props.course.courseCode),
+            isActive: this.props.course === undefined || (this.props.course.isActive === undefined ? false : this.props.course.isActive),
             categoryNames: this.props.course === undefined ? [] : Object.keys(this.props.course.courseCategories),
             optionNames: this.props.course === undefined ? [] : Object.values(this.props.course.courseCategories),
 
@@ -74,10 +82,31 @@ class InstructorCourseSettings extends React.Component {
                 onClose={() => {this.props.openCtl(false)}}
             >
                 <DialogTitle>
-                    {this.props.newCourse ? 'Add Course' : 'Course Settings'}
+                    <div className={this.props.classes.titleBar}>
+                        <div>
+                            {this.props.newCourse ? 'Add Course' : 'Course Settings'}
+                        </div>
+
+                        <FormControlLabel
+                            control={
+                            <Switch
+                                checked={this.state.isActive}
+                                onChange={(event) => {
+                                    this.setState({
+                                        isActive: event.target.checked,
+                                    });
+                                }}
+                                name="active"
+                            />
+                            }
+                            label="Active course"
+                            labelPlacement="start"
+                        />
+                    </div>
                 </DialogTitle>
 
                 <DialogContent>
+
                     <TextField
                         fullWidth
                         margin="normal"
@@ -286,6 +315,7 @@ class InstructorCourseSettings extends React.Component {
                                     courseInstructorID: this.props.account.accountID,
                                     courseActivitySessionID: '',
                                     courseActivityPollID: '',
+                                    isActive: this.state.isActive,
                                 };
 
                                 createCourse(data).then(() => {

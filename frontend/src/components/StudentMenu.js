@@ -10,10 +10,13 @@ import Divider from '@material-ui/core/Divider';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListSubheader from '@material-ui/core/ListSubheader';
 import IconButton from "@material-ui/core/IconButton";
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import AddIcon from '@material-ui/icons/Add';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 
 import {changeAccount, changeCourses} from "../redux";
 import {fetchCourses, saveStudentCourse, searchCourses, signOut, checkCourseCode} from "../firebaseApi";
@@ -42,6 +45,7 @@ class StudentMenu extends Component {
 
         this.state = {
             searchCourses: [],
+            allCoursesShown: false,
         };
     }
 
@@ -117,9 +121,10 @@ class StudentMenu extends Component {
                     {this.props.account.accountEmail === '' ? null :
                         <div>
                             <List
-                                subheader={<ListSubheader>Saved Courses</ListSubheader>}
+                                subheader={<ListSubheader>Active Courses</ListSubheader>}
                             >
                                 {Object.values(this.props.courses).map(course =>
+                                    course.isActive ? (
                                     <ListItem
                                         key={course.courseName}
                                         button
@@ -133,7 +138,42 @@ class StudentMenu extends Component {
                                     >
                                         <ListItemText primary={course.courseName}/>
                                     </ListItem>
+                                    ) : null
                                 )}
+                            </List>
+
+                            <List
+                                subheader={<ListSubheader>Inactive Courses</ListSubheader>}
+                            >
+                                {Object.values(this.props.courses).map(course =>
+                                    this.state.allCoursesShown && (!course.isActive || course.isActive === undefined) ? (
+                                    <ListItem
+                                        key={course.courseName}
+                                        button
+                                        selected={this.props.match.params.courseID === course.courseID}
+                                        onClick={() => {
+                                            this.props.history.push('/student/' + course.courseID);
+                                            if (mobile) {
+                                                this.props.openCtl(false);
+                                            }
+                                        }}
+                                    >
+                                        <ListItemText primary={course.courseName}/>
+                                    </ListItem>
+                                    ) : null
+                                )}
+
+                                <ListItem
+                                    button
+                                    onClick={() => {
+                                        this.setState({allCoursesShown: !this.state.allCoursesShown})
+                                    }}
+                                >
+                                    <ListItemIcon>
+                                        {this.state.allCoursesShown ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                                    </ListItemIcon>
+                                    <ListItemText primary={this.state.allCoursesShown ? 'Hide all' : 'Show all'} />
+                                </ListItem>
                             </List>
 
                             <Divider/>

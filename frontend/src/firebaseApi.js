@@ -401,6 +401,127 @@ export const setCourseStudents = (data) => {
     });
 };
 
+export const getCourseVotes = (courseID) => {
+
+        /* 
+         * DATA FORMAT:
+         *
+         * data = [
+         *   {
+         *     categories: [
+         *       'category1',
+         *        ...
+         *     ],
+         *     sessions: [
+         *       #, // Number of polls for session 1
+         *        ...
+         *     ]
+         *   },
+         *   {
+         *     studentName: 'studentName',
+         *     studentID: 'studentID',
+         *     studentCategories: [
+         *       'optionA' // Option chosen for category1
+         *        ...
+         *     ],
+         *     studentVotes: [
+         *       'A',
+         *        ...
+         *     ],
+         *   },
+         *    ...
+         * ]
+         */
+    let data = [
+        {
+            categories: [],
+            sessions: [],
+        }
+    ];
+
+    return new Promise((resolve, reject) => {
+        // Populate data with categories
+        let courseRef = firebase.firestore().collection('courses').doc(courseID);
+        courseRef.get().then(courseSnapshot => {
+            // Get all course categories
+            data[0].categories = Object.keys(courseSnapshot.get('courseCategories'));
+        }).then(() => { // Populate data with students
+            return courseRef.collection('students').get();
+        }).then(studentsSnapshot => {
+            let promises = [];
+
+            studentsSnapshot.forEach(courseStudentSnapshot => {
+                let studentCategories = [];
+                data[0].categories.forEach(category => {
+                    studentCategories.push(courseStudentSnapshot.get('studentCategories')[category]);
+                });
+
+                let promise = firebase.firestore().collection('accounts').doc(courseStudentSnapshot.id).get().then(studentSnapshot => {
+
+                    data.push({
+                        studentName: studentSnapshot.get('name'),
+                        studentID: studentSnapshot.id,
+                        studentCategories: studentCategories,
+                        studentVotes: [],
+                    })
+                });
+
+                promises.push(promise);
+            });
+
+            return Promise.all(promises);
+        }).then(() => { // Populate data with votes
+            return firebase.firestore().collection('sessions').where('sessionCourseID', '==', courseID).orderBy('sessionStartTime').get();
+        }).then(sessionsSnapshot => {
+            let promises = [];
+
+            sessionsSnapshot.forEach(sessionSnapshot => {
+
+                let promise = firebase.firestore().collection('polls').where('pollSessionID', '==', sessionSnapshot.id).orderBy('pollStartTime').get().then(pollsSnapshot => {
+                    let promises1 = [];
+                    let numPolls = 0;
+
+                    pollsSnapshot.forEach(pollSnapshot => {
+                        numPolls++;
+
+                        let promise1 = pollSnapshot.ref.collection('students').get().then(pollStudentsSnapshot => {
+                            let students = [];
+
+
+                            pollStudentsSnapshot.forEach(studentSnapshot => {
+                                console.log(studentSnapshot.id);
+                                students.push(studentSnapshot.id);
+                                let studentIndex = data.findIndex(obj => obj.studentID === studentSnapshot.id);
+                                data[studentIndex].studentVotes.push(studentSnapshot.get('studentVote'));
+                            });
+
+                            for (let i = 1; i < data.length; i++) {
+                                if (students.indexOf(data[i].studentID) === -1) {
+                                    data[i].studentVotes.push(undefined);
+                                }
+                            }
+                        });
+                        promises1.push(promise1);
+                    });
+
+                    return Promise.all(promises1).then(() => {
+                        data[0].sessions.push(numPolls);
+                    })
+                });
+
+                promises.push(promise);
+            });
+
+            return Promise.all(promises);
+        }).then(() => {
+            resolve(data);
+        }).catch(err => {
+            console.log(err);
+        });
+    });
+
+};
+
 /*
  Session-related functions
  */

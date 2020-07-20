@@ -25,6 +25,7 @@ import {changeAccount, changeCourses} from "../redux";
 import {fetchCourses, signOut} from "../firebaseApi";
 import InstructorCourseSettings from "./InstructorCourseSettings";
 import InstructorCourseEnrollment from "./InstructorCourseEnrollment";
+import InstructorCourseExport from "./InstructorCourseExport";
 import { blue } from '@material-ui/core/colors';
 
 const styles = theme => ({
@@ -51,6 +52,7 @@ class InstructorMenu extends Component {
             courseAnchorEl: null,
             courseSettingsOpen: false,
             courseEnrollmentOpen: false,
+            courseExportOpen: false,
             allCoursesShown: false,
         };
     }
@@ -253,6 +255,18 @@ class InstructorMenu extends Component {
                     >
                         Enrollment
                     </MenuItem>
+
+                    <MenuItem
+                        button={true}
+                        onClick={()=>{
+                            this.setState({
+                                courseExportOpen: true,
+                                courseAnchorEl: null,
+                            });
+                        }}
+                    >
+                        Export votes
+                    </MenuItem>
                 </Menu>
 
                 <InstructorCourseSettings
@@ -267,6 +281,15 @@ class InstructorMenu extends Component {
                         key={"Enrollment"  + this.state.courseEnrollmentOpen}
                         open={this.state.courseEnrollmentOpen}
                         openCtl={open => {this.setState({courseEnrollmentOpen: open})}}
+                        course={this.props.courses[this.state.course]}
+                    />
+                }
+
+                {this.props.courses[this.state.course] === undefined ? null :
+                    <InstructorCourseExport
+                        key={"Export"  + this.state.courseExportOpen}
+                        open={this.state.courseExportOpen}
+                        openCtl={open => {this.setState({courseExportOpen: open})}}
                         course={this.props.courses[this.state.course]}
                     />
                 }

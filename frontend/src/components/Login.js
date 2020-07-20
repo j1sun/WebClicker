@@ -155,7 +155,7 @@ class Login extends Component {
                             <TextField
                                 fullWidth
                                 margin="normal"
-                                label="Name"
+                                label="Full Name"
                                 error={this.state.nameError.length !== 0}
                                 helperText={this.state.nameError}
                                 onChange={(event) => {

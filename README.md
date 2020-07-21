@@ -1,7 +1,7 @@
 # WebClicker
 
 # For Developers:
-## Note: All commands must be run in the `./frontend` folder.
+### Note: All commands must be run in the `./frontend` folder.
 - Create a Firebase Project and get your own firebaseConfig. You should copy the firebaseConfig from your firebase project settings.
     > 1. Sign in to Firebase, then open your project.
     > 2. Click the Settings icon, then select Project settings.

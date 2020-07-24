@@ -206,6 +206,7 @@ class StudentMenu extends Component {
                                         let data = {
                                             accountID: this.props.account.accountID,
                                             courseID: course.courseID,
+                                            name: this.props.account.accountName,
                                         };
 
                                         saveStudentCourse(data);

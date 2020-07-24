@@ -80,6 +80,7 @@ class InstructorCourseEnrollment extends Component {
         for(let student of Object.values(students)) {
             let studentData = {};
             studentData['studentID'] = student.studentID;
+            studentData['name'] = student.name;
 
             for(let category in student.studentCategories) {
                 studentData[category] = courseCategories[category].indexOf(student.studentCategories[category]);
@@ -94,7 +95,7 @@ class InstructorCourseEnrollment extends Component {
         for(let studentData of studentsData) {
             let student = {studentCategories: {}};
             for(let columnName in studentData) {
-                if(columnName === 'studentID') {
+                if(columnName === 'studentID' || columnName === 'name') {
                     student[columnName] = studentData[columnName]
                 }
                 else if (columnName !== 'tableData') {
@@ -131,7 +132,7 @@ class InstructorCourseEnrollment extends Component {
                 <DialogContent>
                     <MaterialTable
                         title="Students"
-                        columns={[{title: 'Student ID', field: 'studentID'}].concat(
+                        columns={[{title: 'Name', field: 'name'}, {title: 'Student ID', field: 'studentID'}].concat(
                             Object.keys(this.props.course.courseCategories).map((category) => {
                                 return {
                                     title: category,
@@ -211,7 +212,7 @@ class InstructorCourseEnrollment extends Component {
                         ]}
                         editable={{
                             onRowAdd: newData => new Promise(resolve => {
-                                if (Object.keys(newData).length - 1 !== Object.keys(this.props.course.courseCategories).length) {
+                                if (Object.keys(newData).length - 2 !== Object.keys(this.props.course.courseCategories).length) {
                                     resolve();
                                     return;
                                 }
@@ -223,7 +224,7 @@ class InstructorCourseEnrollment extends Component {
                                 resolve();
                             }),
                             onRowUpdate: (newData, oldData) => new Promise(resolve => {
-                                if (Object.keys(newData).length - 1 !== Object.keys(this.props.course.courseCategories).length) {
+                                if (Object.keys(newData).length -2 !== Object.keys(this.props.course.courseCategories).length) {
                                     resolve();
                                     return;
                                 }

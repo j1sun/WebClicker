@@ -339,12 +339,13 @@ export const fetchCourseStudents = (data) => {
     let courseID = data.courseID;
 
     return new Promise((resolve, reject) => {
-        firebase.firestore().collection('courses').doc(courseID).collection('students').get().then(query => {
+        firebase.firestore().collection('courses').doc(courseID).collection('students').orderBy('name').get().then(query => {
             let students = {};
 
             query.forEach((doc) => {
                 let student = {};
                 student['studentID'] = doc.id;
+                student['name'] = doc.get('name');
                 student['studentCategories'] = doc.get('studentCategories');
                 students[doc.id] = student;
             });
@@ -388,6 +389,7 @@ export const setCourseStudents = (data) => {
         for(let studentID in students) {
             let promise = firebase.firestore().collection('courses').doc(courseID).collection('students').doc(studentID).set({
                 studentID: students[studentID]['studentID'],
+                name: students[studentID]['name'],
                 studentCategories: students[studentID]['studentCategories'],
             });
             promises.push(promise);
@@ -764,7 +766,6 @@ export const setPollStudent = (data) => {
             firebase.firestore().collection('sessions').doc(pollDoc.get('pollSessionID')).get().then(sessionDoc => {
                 firebase.firestore().collection('courses').doc(sessionDoc.get('sessionCourseID')).collection('students').doc(studentID).get().then(studentDoc => {
                     firebase.firestore().collection('polls').doc(pollID).collection('students').doc(studentID).set({
-                        studentID: studentID,
                         studentVote: vote,
                         studentCategories: studentDoc.get('studentCategories') === undefined ? {} : studentDoc.get('studentCategories'),
                     }).then(() => {
@@ -781,6 +782,8 @@ export const setPollStudent = (data) => {
 export const saveStudentCourse = (data) => {
     let courseID = data.courseID;
     let accountID = data.accountID;
+    let name = data.name;
+    console.log(name);
 
     return new Promise((resolve, reject) => {
         firebase.firestore().collection('accounts').doc(accountID).update({
@@ -796,6 +799,7 @@ export const saveStudentCourse = (data) => {
                             // TODO: Set all categories to undefined
                         },
                         studentID: accountID,
+                        name: name,
                     }).then(() => {
                         resolve();
                     }).catch(err => {

@@ -766,7 +766,7 @@ export const setPollStudent = (data) => {
                     firebase.firestore().collection('polls').doc(pollID).collection('students').doc(studentID).set({
                         studentID: studentID,
                         studentVote: vote,
-                        studentCategories: studentDoc.get('studentCategories'),
+                        studentCategories: studentDoc.get('studentCategories') === undefined ? {} : studentDoc.get('studentCategories'),
                     }).then(() => {
                         resolve();
                     }).catch(err => {

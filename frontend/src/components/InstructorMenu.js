@@ -164,7 +164,10 @@ class InstructorMenu extends Component {
                         <ListItem
                             button
                             onClick={() => {
-                                this.setState({courseSettingsOpen: true})
+                                this.setState({
+                                    course: null,
+                                    courseSettingsOpen: true,
+                                });
                             }}
                         >
                             <ListItemIcon>
@@ -273,6 +276,7 @@ class InstructorMenu extends Component {
                     key={"Settings New"  + this.state.courseSettingsOpen}
                     open={this.state.courseSettingsOpen}
                     openCtl={open => {this.setState({courseSettingsOpen: open})}}
+                    newCourse={this.state.course === null}
                     course={this.props.courses[this.state.course]}
                 />
 

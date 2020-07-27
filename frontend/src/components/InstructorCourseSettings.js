@@ -54,13 +54,14 @@ class InstructorCourseSettings extends React.Component {
         this.state = {
             courseID: this.props.course === undefined ? '' : this.props.course.courseID,
             name: this.props.course === undefined ? '' : this.props.course.courseName,
-            quarter: this.props.course === undefined ? '' : this.props.course.courseQuarter,
+            term: this.props.course === undefined ? '' : this.props.course.courseTerm,
             courseCode: this.props.course === undefined ? "None" : (this.props.course.courseCode === undefined ? '' : this.props.course.courseCode),
             isActive: this.props.course === undefined || (this.props.course.isActive === undefined ? false : this.props.course.isActive),
             categoryNames: this.props.course === undefined ? [] : Object.keys(this.props.course.courseCategories),
             optionNames: this.props.course === undefined ? [] : Object.values(this.props.course.courseCategories),
 
             nameError: '',
+            termError: '',
             quarterError: '',
             courseCodeError: '',
             categoryNamesErrors: '',
@@ -122,33 +123,20 @@ class InstructorCourseSettings extends React.Component {
                         }}
                     />
 
-                    <FormControl
+                    <TextField
                         fullWidth
                         margin="normal"
-                        error={this.state.quarterError.length !== 0}
-                    >
-                        <InputLabel>Choose Quarter</InputLabel>
-                        <Select
-                            value={this.state.quarter}
-                            onChange={(event) => {
-                                this.setState({
-                                    quarter: event.target.value,
-                                    quarterError: '',
-                                });
-                            }}
-                        >
-                            {['Winter', 'Spring', 'Summer', 'Fall'].map(quarter => (
-                                <MenuItem
-                                    button={true}
-                                    key={quarter}
-                                    value={quarter}
-                                >
-                                    {quarter}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                        {this.state.quarterError.length === 0 ? null : <FormHelperText>{this.state.quarterError}</FormHelperText>}
-                    </FormControl>
+                        label="Course Term"
+                        value={this.state.term}
+                        error={this.state.termError.length !== 0}
+                        helperText={this.state.termError.length === 0 ? 'eg. Fall 2020' : this.state.termError}
+                        onChange={(event) => {
+                            this.setState({
+                                term: event.target.value,
+                                termError: '',
+                            });
+                        }}
+                    />
 
                     <div className={this.props.classes.courseCode} >
                         <TextField
@@ -156,7 +144,7 @@ class InstructorCourseSettings extends React.Component {
                             disabled
                             margin="normal"
                             label="Course code"
-                            value={this.state.courseCode == '' ? "None" : this.state.courseCode}
+                            value={this.state.courseCode === '' ? "None" : this.state.courseCode}
                             error={this.state.courseCodeError.length !== 0}
                             helperText={this.state.courseCodeError}
                         />
@@ -279,13 +267,13 @@ class InstructorCourseSettings extends React.Component {
 
                             // The course name cannot be empty
                             if(this.state.name.length === 0) {
-                                this.setState({nameError: 'The course identifier cannot be empty!'});
+                                this.setState({nameError: 'Please specify a course name.'});
                                 error = true;
                             }
 
                             // The quarter cannot be empty
-                            if(this.state.quarter.length === 0) {
-                                this.setState({quarterError: 'The course identifier cannot be empty!'});
+                            if(this.state.term.length === 0) {
+                                this.setState({termError: 'Please specify a term (eg. Fall 2020).'});
                                 error = true;
                             }
 
@@ -293,7 +281,7 @@ class InstructorCourseSettings extends React.Component {
                             let newOptionNamesErrors = this.state.optionNamesErrors;
                             this.state.optionNames.forEach((optionNames, optionIndex) => {
                                 if (optionNames.length === 0) {
-                                    newOptionNamesErrors[optionIndex] = 'The category options cannot be empty!';
+                                    newOptionNamesErrors[optionIndex] = 'Please specify at least one option for this category.';
                                     error = true;
                                 }
                             });
@@ -309,7 +297,7 @@ class InstructorCourseSettings extends React.Component {
                                 let data = {
                                     courseID: this.state.courseID,
                                     courseName: this.state.name,
-                                    courseQuarter: this.state.quarter,
+                                    courseTerm: this.state.term,
                                     courseCode: this.state.courseCode,
                                     courseCategories: courseCategories,
                                     courseInstructorID: this.props.account.accountID,

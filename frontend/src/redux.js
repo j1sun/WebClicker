@@ -54,6 +54,7 @@ let initialState = {
      courseID: {
          courseID: 'testCourseID',
          courseName: 'testCourseName',
+         courseTerm: 'testCourseTerm',
          courseCategories: {
             'testCategoryName': [
                 'testOptionName',

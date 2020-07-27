@@ -136,7 +136,10 @@ class StudentMenu extends Component {
                                             }
                                         }}
                                     >
-                                        <ListItemText primary={course.courseName}/>
+                                        <ListItemText
+                                            primary={course.courseName}
+                                            secondary = {course.courseTerm !== undefined ? course.courseTerm : ''}
+                                            />
                                     </ListItem>
                                     ) : null
                                 )}
@@ -158,7 +161,10 @@ class StudentMenu extends Component {
                                             }
                                         }}
                                     >
-                                        <ListItemText primary={course.courseName}/>
+                                        <ListItemText
+                                            primary={course.courseName}
+                                            secondary = {course.courseTerm !== undefined ? course.courseTerm : ''}
+                                            />
                                     </ListItem>
                                     ) : null
                                 )}
@@ -219,7 +225,10 @@ class StudentMenu extends Component {
 
                                 }}
                             >
-                                <ListItemText primary={course.courseName} />
+                                <ListItemText
+                                    primary={course.courseName}
+                                    secondary = {course.courseTerm !== undefined ? course.courseTerm : ''}
+                                />
                             </ListItem>
                         )}
                     </List>

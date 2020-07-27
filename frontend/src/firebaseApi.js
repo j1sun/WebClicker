@@ -162,7 +162,7 @@ const getCourse = (doc) => {
 
     course['courseID'] = doc.id;
     course['courseName'] = doc.get('courseName');
-    course['courseQuarter'] = doc.get('courseQuarter');
+    course['courseTerm'] = doc.get('courseTerm');
     course['courseCode'] = doc.get('courseCode');
     course['courseCategories'] = doc.get('courseCategories');
     course['courseInstructorID'] = doc.get('courseInstructorID');
@@ -287,7 +287,7 @@ export const generateCourseCode = () => {
 export const createCourse = (data) => {
     let courseID = data.courseID;
     let courseName = data.courseName;
-    let courseQuarter = data.courseQuarter;
+    let courseTerm = data.courseTerm;
     let courseCode = data.courseCode;
     let courseCategories = data.courseCategories;
     let courseInstructorID = data.courseInstructorID;
@@ -297,7 +297,7 @@ export const createCourse = (data) => {
         if (courseID == '') {
             firebase.firestore().collection('courses').add({
                 courseName: courseName,
-                courseQuarter: courseQuarter,
+                courseTerm: courseTerm,
                 courseCode: courseCode,
                 courseCategories: courseCategories,
                 courseInstructorID: courseInstructorID,
@@ -315,7 +315,7 @@ export const createCourse = (data) => {
         } else {
             firebase.firestore().collection('courses').doc(courseID).update({
                 courseName: courseName,
-                courseQuarter: courseQuarter,
+                courseTerm: courseTerm,
                 courseCode: courseCode,
                 courseCategories: courseCategories,
                 courseInstructorID: courseInstructorID,

@@ -238,7 +238,10 @@ class InstructorMenu extends Component {
                     anchorEl={this.state.courseAnchorEl}
                     open={Boolean(this.state.courseAnchorEl)}
                     onClose={() => {
-                        this.setState({courseAnchorEl: null})
+                        this.setState({
+                            course: null,
+                            courseAnchorEl: null,
+                        });
                     }}
                 >
                     <MenuItem

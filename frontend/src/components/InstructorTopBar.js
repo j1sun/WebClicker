@@ -114,7 +114,7 @@ class InstructorTopBar extends React.Component {
     render() {
         let mobile = this.props.width === 'sm' || this.props.width === 'xs';
 
-        let secondAppBar = this.props.courses[this.props.match.params.courseID] === undefined ? null : (
+        let secondAppBar = this.props.courses[this.props.match.params.courseID] === undefined || this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID] === undefined ? null : (
             <ListItem
                 className={this.props.classes.pollActions}
                 dense={true}
@@ -270,17 +270,20 @@ class InstructorTopBar extends React.Component {
                                                 }
                                             }}
                                         >
-                                            {this.props.courses[this.props.match.params.courseID].courseActivitySessionID === '' ? <AddIcon /> : "Stop Session"}
+                                            {this.props.courses[this.props.match.params.courseID].courseActivitySessionID === '' ? <AddIcon /> : "Stop Session " +
+                                                (this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID] === undefined ? ''
+                                                : this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID].sessionIndex)}
                                         </Button>
 
-                                        <Button
-                                            onClick={() => {
-                                                this.props.sessionMenuOpenCtl(!this.props.sessionMenuOpen)
-                                            }}
-                                        >
-                                            {(this.props.sessions[this.props.match.params.sessionID] === undefined ? 'Sessions'
-                                                : ' Session ' + this.props.sessions[this.props.match.params.sessionID].sessionIndex)}
-                                        </Button>
+                                        {this.props.courses[this.props.match.params.courseID].courseActivitySessionID !== '' ? null :
+                                            <Button
+                                                onClick={() => {
+                                                    this.props.sessionMenuOpenCtl(!this.props.sessionMenuOpen)
+                                                }}
+                                            >
+                                                Sessions
+                                            </Button>
+                                        }
                                     </ButtonGroup>
                                 }
                             </Grid>

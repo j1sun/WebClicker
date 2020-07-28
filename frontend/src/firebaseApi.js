@@ -607,6 +607,40 @@ export const deactivateSession = (data) => {
     });
 };
 
+export const deleteSession = (sessionID) => {
+    return new Promise((resolve, reject) => {
+        firebase.firestore().collection('sessions').doc(sessionID).get().then(sessionSnapshot => {
+            // Remove all polls
+            return firebase.firestore().collection('polls').where('pollSessionID', '==', sessionID).get().then(pollsSnapshot => {
+                let promises = [];
+                pollsSnapshot.forEach(pollSnapshot => {
+                    let promise = pollSnapshot.ref.collection('students').get().then(studentsSnapshot => {
+                        if (!studentsSnapshot.empty) {
+                            studentsSnapshot.forEach(studentSnapshot => {
+                                studentSnapshot.ref.delete();
+                            })
+                        }
+                    }).then(() => {
+                        pollSnapshot.ref.delete();
+                    }).catch(err => {
+                        console.log(err);
+                    });
+
+                    promises.push(promise);
+                });
+
+                return Promise.all(promises)
+            }).then(() => {
+                return sessionSnapshot.ref.delete();
+            });
+        }).then(() => {
+            resolve();
+        }).catch(err => {
+            console.log(err);
+        })
+    });
+};
+
 /*
  Poll-related functions
  */

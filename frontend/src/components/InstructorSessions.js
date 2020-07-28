@@ -16,7 +16,10 @@ import Avatar from "@material-ui/core/Avatar";
 import IconButton from "@material-ui/core/IconButton";
 import DoneIcon from '@material-ui/icons/Done';
 import MoreVertOutlinedIcon from "@material-ui/icons/MoreVertOutlined";
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
 
+import InstructorSessionDelete from './InstructorSessionDelete';
 import {changeSessions} from "../redux";
 import {fetchSessions} from "../firebaseApi";
 
@@ -40,6 +43,9 @@ class InstructorSessions extends Component {
             statisticsOpen: false,
             deleteConfirmOpen: false,
             selected: [],
+            session: null,
+            sessionAnchorEl: null,
+            sessionDeleteOpen: false,
         };
     }
 
@@ -131,7 +137,14 @@ class InstructorSessions extends Component {
                                     />
 
                                     <ListItemSecondaryAction>
-                                        <IconButton>
+                                        <IconButton
+                                            onClick={(event) => {
+                                                this.setState({
+                                                    session: session.sessionID,
+                                                    sessionAnchorEl: event.currentTarget,
+                                                });
+                                            }}
+                                        >
                                             <MoreVertOutlinedIcon/>
                                         </IconButton>
                                     </ListItemSecondaryAction>
@@ -140,6 +153,39 @@ class InstructorSessions extends Component {
                         })}
                     </List>
                 </Drawer>
+
+                <Menu
+                    anchorEl={this.state.sessionAnchorEl}
+                    open={Boolean(this.state.sessionAnchorEl)}
+                    onClose={() => {
+                        this.setState({
+                            session: null,
+                            sessionAnchorEl: null,
+                        });
+                    }}
+                >
+                    <MenuItem
+                        button={true}
+                        disabled={this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID] !== undefined}
+                        onClick={()=>{
+                            this.setState({
+                                sessionDeleteOpen: true,
+                                sessionAnchorEl: null,
+                            });
+                        }}
+                    >
+                        Delete session
+                    </MenuItem>
+                </Menu>
+
+                {this.props.sessions[this.state.session] === undefined ? null :
+                    <InstructorSessionDelete
+                        key={"Delete "  + this.state.sessionDeleteOpen}
+                        open={this.state.sessionDeleteOpen}
+                        openCtl={open => {this.setState({sessionDeleteOpen: open})}}
+                        session={this.props.sessions[this.state.session]}
+                    />
+                }
             </div>
         );
     }

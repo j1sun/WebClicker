@@ -68,26 +68,19 @@ class Slides extends React.Component {
 			imgUrls: [[]],
 			currentImageIndex: 0,
 			currentFolder:1,
+			currentFolderMapped: [],
 			isActive:false,
 			currentID: this.props.match.params.courseID,
 			isLoaded: false
 		};
 		
 		this.handleShowSlides = this.handleShowSlides.bind(this);
-		this.handleHideSlides = this.handleHideSlides.bind(this);
-		//this.nextSlide = this.nextSlide.bind(this);
-		//this.previousSlide = this.previousSlide.bind(this);
-		//this.nextLecture = this.nextLecture.bind(this);
-		//this.previousLecture = this.previousLecture.bind(this);
-		
+		this.handleHideSlides = this.handleHideSlides.bind(this);		
 	}
-	
-	
-	
 getFilesList(){		
 		var storage = firebase.app().storage("gs://iclicker-web-c0d76.appspot.com");
 		var storageRef = storage.ref();
-		var listRef = storageRef.child("/uploadtest/"+this.props.match.params.courseID+"/");	
+		var listRef = storageRef.child("/uploads/"+this.props.match.params.courseID+"/");	
 		this.setState({
 			isLoaded: false
 		});		
@@ -109,7 +102,7 @@ getFilesList(){
 		this.setState({
 			isLoaded: true
 		});
-		}).catch(function(error2) {
+		}).then(this.updateFolderNum()).catch(function(error2) {
 		});
 		
 }
@@ -124,7 +117,6 @@ getStats(){
 		console.log(this.state.imgUrls[i].length);
 	}
 }
-
 handleShowSlides = () => {
 	
 		try {
@@ -137,12 +129,11 @@ handleShowSlides = () => {
 		}
 		catch(err) { 
 		}
-		
+		this.updateFolderNum();		
 	  };
 
   handleHideSlides = () => {
 		try {
-			
 			this.setState({
 			  isActive: false,
 			  currentImageIndex: 0,
@@ -158,11 +149,12 @@ handleShowSlides = () => {
 	
 	previousSlide = () => {
 		//this.getStats();
+		let currentFolder=this.state.currentFolderMapped[this.state.currentFolder-1];
 		try {
-			  var folderNum=0;
+			var folderNum=0;
 			try{
 				for(var i=1; i<this.state.imgUrls.length; i++){
-					if(this.state.imgUrls[i][0].includes("Lecture"+this.state.currentFolder+"%")){
+					if(this.state.imgUrls[i][0].includes("2F"+currentFolder+"%")){
 						folderNum=i;		
 					}
 				}
@@ -181,17 +173,63 @@ handleShowSlides = () => {
 		catch(err) {
 		  
 		}
-		
+	}
+	toLastSlideOfSession = () => {
+		this.updateFolderNum();
+		let currentFolder=this.state.currentFolderMapped[this.state.currentFolder-1];
+		try {
+			var folderNum=0;
+			try{
+				for(var i=1; i<this.state.imgUrls.length; i++){
+					if(this.state.imgUrls[i][0].includes("2F"+currentFolder+"%")){
+						folderNum=i;		
+					}
+				}
+			}
+			catch(err){}
+			
+			const lastIndex = this.state.imgUrls[folderNum].length - 1;			
+			this.setState({
+				currentImageIndex: lastIndex
+			});
+		}
+		catch(err) {
+		  
+		}
+	}
+	toCurrentSlide = () => {
+		this.updateFolderNum();
+		let lastFolderNum=this.state.imgUrls.length-1;
+		let lastFolder=this.state.currentFolderMapped[this.state.currentFolderMapped.length-1];		
+		try {
+			let folderNum=0;
+			try{
+				for(let i=1; i<this.state.imgUrls.length; i++){
+					if(this.state.imgUrls[i][0].includes("2F"+lastFolder+"%")){
+						folderNum=i;		
+					}
+				}
+			}
+			catch(err){}
+			let index = this.state.imgUrls[folderNum].length-1;
+			this.setState({
+				currentImageIndex: index,
+				currentFolder: lastFolderNum
+			});
+		}
+		catch(err) { 
+		}
 		
 	}
 	
 	nextSlide = () => {
 		//this.getStats();
+		let currentFolder=this.state.currentFolderMapped[this.state.currentFolder-1];
 		try {
-			  var folderNum=0;
+			var folderNum=0;
 			try{
 				for(var i=1; i<this.state.imgUrls.length; i++){
-					if(this.state.imgUrls[i][0].includes("Lecture"+this.state.currentFolder+"%")){
+					if(this.state.imgUrls[i][0].includes("2F"+currentFolder+"%")){
 						folderNum=i;		
 					}
 				}
@@ -212,7 +250,7 @@ handleShowSlides = () => {
 	}
 	
 	previousLecture = () => {
-		
+		this.updateFolderNum();	
 		const lastIndex = this.state.imgUrls.length - 1;
 		const { currentFolder } = this.state;
 		const shouldResetIndex = currentFolder === 0;
@@ -220,17 +258,16 @@ handleShowSlides = () => {
 		if(index == 0){
 			index=lastIndex;
 		}
-		
 		this.setState({
-			currentImageIndex: 0
-		});
-		this.setState({
+			currentImageIndex: 0,
 			currentFolder: index
 		});
 		
+		
 	}
 	
-	nextLecture = () => {
+	nextLecture = () => {	
+		this.updateFolderNum();	
 		const lastIndex = this.state.imgUrls.length - 1;
 		const { currentFolder } = this.state;
 		const shouldResetIndex = currentFolder === lastIndex;
@@ -238,13 +275,11 @@ handleShowSlides = () => {
 		if(index == 0){
 			index=1;
 		}
-
 		this.setState({
-			currentImageIndex: 0
-		});
-		this.setState({
+			currentImageIndex: 0,
 			currentFolder: index
 		});
+		
 		
 	}
 	
@@ -253,36 +288,34 @@ handleShowSlides = () => {
 	}
 	
 	getSlideNum(currentFolder){
+		currentFolder=this.state.currentFolderMapped[currentFolder-1];
 		var folderNum=0;
-			
 			for(var i=1; i<this.state.imgUrls.length; i++){
 				try{
-					if(this.state.imgUrls[i][0].includes("Lecture"+currentFolder+"%")){
+					if(this.state.imgUrls[i][0].includes("2F"+currentFolder+"%")){
 						folderNum=i;		
 					}
 				}catch(err){}
 			}
 		return this.state.imgUrls[folderNum].length;
-			
 	}
 	
 	
 	getCurrentImage = (currentFolder, currentScreenshot) =>{
+		
 		currentScreenshot+=1;
 		//console.log(imgUrls.length+"  "+imgUrls[this.state.currentFolder]);
+		currentFolder=this.state.currentFolderMapped[currentFolder-1];
 		try {
 			  var folderNum=0;
 			try{
 				for(var i=1; i<this.state.imgUrls.length; i++){
-					if(this.state.imgUrls[i][0].includes("Lecture"+currentFolder+"%")){
+					if(this.state.imgUrls[i][0].includes("2F"+currentFolder+"%")){
 						folderNum=i;		
 					}
 				}
-				
 			}
 			catch(err){}
-			
-			
 			var h=0;
 			for(var i=0; i<this.state.imgUrls[folderNum].length; i++){
 				if(this.state.imgUrls[folderNum][i].includes("screenshot"+currentScreenshot+".jpg")){
@@ -295,7 +328,33 @@ handleShowSlides = () => {
 			return null;	
 		}
 		
-	}	
+	}
+	updateFolderNum(){
+		let lectArray= new Array();
+			try{
+				for(var i=1; i<this.state.imgUrls.length; i++){
+					var pos=0;
+					let matches = this.state.imgUrls[i][0].match(/2F(\d+)%/g); 
+					matches[0]=matches[0].substring(1);
+					let n=matches[0].match(/\d+/g).map(Number);
+					let num=n[0];
+					//lectArray.push(num);
+					while(num>lectArray[pos]){
+						pos++;
+					}	
+					try{
+						lectArray.splice(pos, 0, num);	
+					}
+					catch(err){
+						lectArray.push(num);
+					}
+				}
+				this.setState({
+				currentFolderMapped: lectArray,
+			});
+			}catch(err){}
+	}		
+	
 	getFileStatus(s, m){
 		if(s){
 			return m;
@@ -306,11 +365,14 @@ handleShowSlides = () => {
 		
 	}
     componentDidMount() {
-		this.getFilesList();
+		setInterval(this.clearList(), 7000);
+		setInterval(this.getFilesList(), 7000);
+		//this.getFilesList();
+		setInterval(this.updateFolderNum(), 7000);		
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-		
+		this.updateFolderNum();
       if(this.props.match.params.courseID != this.state.currentID){
 		this.setState({
 			imgUrls: [[]],
@@ -332,16 +394,17 @@ handleShowSlides = () => {
 					<div className={mobile ? null : this.props.classes.mainPage}>
 						<div className={this.props.classes.appBarSpacer}/>	
 						
-						<div className="twoButton">
+						<div className="fourButton">
 							<button onClick={this.handleHideSlides} id="show_hide">{this.getFileStatus(this.state.isLoaded, "Hide Slides")}</button>
 							<button onClick={this.copyImageToClipboard}>Copy To Clipboard</button>
+							<button onClick={this.toLastSlideOfSession}>Go To Last Slide</button>
+							<button onClick={this.toCurrentSlide}>Go To Current Slide</button>
 						</div>
 							<div className="slideshow-container">
 							
-								<div className="slideNum" id="lectureNum">Lecture {this.state.currentFolder} of {this.state.imgUrls.length-1}</div>
+								<div className="slideNum" id="lectureNum">Session {this.state.currentFolder} of {this.state.imgUrls.length-1}</div>
 								<Arrow direction="left" clickFunction={ this.previousLecture } glyph="&#10094;" />
 								<Arrow direction="right" clickFunction={ this.nextLecture } glyph="&#10095;" />
-							
 							</div>	
 							
 							<div className="slideshow-container">

@@ -43,6 +43,9 @@ const styles = theme => ({
     bar: {
         height: 320
     },
+    skeleton: {
+        height: 320,
+    },
     image: {
         height: 320,
     },
@@ -247,7 +250,12 @@ class StudentPoll extends Component {
                             alignItems="center"
                             spacing={1}
                         >
-                            {!this.props.course.courseActivityPollDisplay ? null :
+                            {!this.props.course.courseActivityPollDisplay ? 
+                            
+                                <Grid item md={6} xs={12}>
+                                    <Skeleton variant="rect" animation={false} className={this.props.classes.skeleton}/>
+                                </Grid>
+                                    :
                                 <Grid item md={6} xs={12}>
                                     {this.state.students === null ? <Skeleton variant="rect" className={this.props.classes.bar}/> :
                                         <Paper className={this.props.classes.bar} elevation={0}>
@@ -279,6 +287,7 @@ class StudentPoll extends Component {
                                 </Grid>
                             }
 
+                            {/* Image preview; temporarily removed
                             <Grid item md={6} xs={12}>
                                 {this.state.imageUrl === null ? <Skeleton variant="rect" className={this.props.classes.image}/> :
                                     <CardMedia
@@ -289,6 +298,7 @@ class StudentPoll extends Component {
                                     />
                                 }
                             </Grid>
+                            */}
                         </Grid>
                     </Card>
 

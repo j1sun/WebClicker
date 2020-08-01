@@ -103,6 +103,7 @@ export const signUp = (data) => {
     let email = data.email;
     let password = data.password;
     let name = data.name;
+    let identifier = data.identifier;
     let note = data.note;
     let type = data.type;
 
@@ -111,6 +112,7 @@ export const signUp = (data) => {
             firebase.app().firestore().collection('accounts').doc().set({
                 email: email,
                 name: name,
+                identifier: identifier,
                 note: note,
                 type: type,
             }).then(() => {
@@ -346,6 +348,8 @@ export const fetchCourseStudents = (data) => {
                 let student = {};
                 student['studentID'] = doc.id;
                 student['name'] = doc.get('name');
+                student['identifier'] = doc.get('identifier');
+                student['iClicker'] = doc.get('iClicker');
                 student['studentCategories'] = doc.get('studentCategories');
                 students[doc.id] = student;
             });
@@ -388,8 +392,9 @@ export const setCourseStudents = (data) => {
 
         for(let studentID in students) {
             let promise = firebase.firestore().collection('courses').doc(courseID).collection('students').doc(studentID).set({
-                studentID: students[studentID]['studentID'],
                 name: students[studentID]['name'],
+                identifier: students[studentID]['identifier'] === undefined ? '' : students[studentID]['identifier'],
+                iClicker: students[studentID]['iClicker'] === undefined ? '' : students[studentID]['iClicker'],
                 studentCategories: students[studentID]['studentCategories'],
             });
             promises.push(promise);
@@ -463,6 +468,8 @@ export const getCourseVotes = (courseID) => {
                     data.push({
                         studentName: studentSnapshot.get('name'),
                         studentID: studentSnapshot.id,
+                        studentIdentifier: studentSnapshot.get('identifier'),
+                        studentIClicker: studentSnapshot.get('iClicker'),
                         studentCategories: studentCategories,
                         studentVotes: [],
                     })
@@ -778,7 +785,7 @@ export const listenPollStudents = (data) => {
         let students = {};
         querySnapshot.forEach((doc) => {
             students[doc.id] = {
-                studentID: doc.id,
+                iClicker: doc.get('iClicker'),
                 studentVote: doc.get('studentVote'),
                 studentCategories: doc.get('studentCategories')
             };
@@ -800,6 +807,7 @@ export const setPollStudent = (data) => {
             firebase.firestore().collection('sessions').doc(pollDoc.get('pollSessionID')).get().then(sessionDoc => {
                 firebase.firestore().collection('courses').doc(sessionDoc.get('sessionCourseID')).collection('students').doc(studentID).get().then(studentDoc => {
                     firebase.firestore().collection('polls').doc(pollID).collection('students').doc(studentID).set({
+                        iClicker: studentDoc.get('iClicker') === undefined ? '' : studentDoc.get('iClicker'),
                         studentVote: vote,
                         studentCategories: studentDoc.get('studentCategories') === undefined ? {} : studentDoc.get('studentCategories'),
                     }).then(() => {
@@ -817,7 +825,7 @@ export const saveStudentCourse = (data) => {
     let courseID = data.courseID;
     let accountID = data.accountID;
     let name = data.name;
-    console.log(name);
+    let identifier = data.identifier;
 
     return new Promise((resolve, reject) => {
         firebase.firestore().collection('accounts').doc(accountID).update({
@@ -832,8 +840,9 @@ export const saveStudentCourse = (data) => {
                         studentCategories: {
                             // TODO: Set all categories to undefined
                         },
-                        studentID: accountID,
                         name: name,
+                        identifier: identifier,
+                        iClicker: '',
                     }).then(() => {
                         resolve();
                     }).catch(err => {

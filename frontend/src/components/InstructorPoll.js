@@ -299,7 +299,8 @@ class InstructorPoll extends Component {
                                 </Paper>
                             }
                         </Grid>
-
+                        
+                        {/* Image preview; temporarily removed
                         <Grid item md={6} xs={12}>
                             {this.state.imageUrl === null ? <Skeleton variant="rect" className={this.props.classes.image}/> :
                                 <CardMedia
@@ -310,6 +311,7 @@ class InstructorPoll extends Component {
                                 />
                             }
                         </Grid>
+                        */}
                     </Grid>
                 </Card>
 
@@ -320,6 +322,21 @@ class InstructorPoll extends Component {
                         open={Boolean(this.state.categoryAnchorEl)}
                         onClose={() => {this.setState({categoryAnchorEl: null})}}
                     >
+
+                        <MenuItem
+                            button={true}
+                            key='None'
+                            onClick={()=>{
+                                this.setState({
+                                    categoryAnchorEl: null,
+                                    categoryName: null,
+                                    optionsConfig: [],
+                                });
+                            }}
+                        >
+                            None
+                        </MenuItem>
+
                         {Object.keys(this.props.course.courseCategories).map(categoryName => (
                             <MenuItem
                                 button={true}

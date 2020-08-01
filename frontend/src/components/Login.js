@@ -48,6 +48,7 @@ class Login extends Component {
             password: '',
             repeatPassword: '',
             name: '',
+            identifier: '',
             note: '',
             type: 'student',
 
@@ -168,9 +169,22 @@ class Login extends Component {
 
                             <TextField
                                 fullWidth
+                                margin="normal"
+                                label="Student Identifier"
+                                helperText="eg. Student ID, PID, etc"
+                                onChange={(event) => {
+                                    this.setState({
+                                        identifier: event.target.value,
+                                    });
+                                }}
+                            />
+
+                            {/* Note field: temporarily disabled
+                            <TextField
+                                fullWidth
                                 multiline
                                 margin="normal"
-                                label="Note"
+                                label="Note (optional)"
                                 helperText="Please provide necessary information for us to verify your identity"
                                 onChange={(event) => {
                                     this.setState({
@@ -178,6 +192,7 @@ class Login extends Component {
                                     });
                                 }}
                             />
+                            */}
 
                             <FormControl
                                 fullWidth
@@ -243,6 +258,7 @@ class Login extends Component {
                                             email: this.state.email,
                                             password: this.state.password,
                                             name: this.state.name,
+                                            identifier: this.state.identifier,
                                             note: this.state.note,
                                             type: this.state.type,
                                         };

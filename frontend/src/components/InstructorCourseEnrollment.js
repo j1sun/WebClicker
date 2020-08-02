@@ -135,8 +135,8 @@ class InstructorCourseEnrollment extends Component {
                     <MaterialTable
                         title="Students"
                         columns={[
-                            {title: 'Name', field: 'name'},
-                            {title: 'Student Identifier', field: 'identifier'},
+                            {title: 'Name', field: 'name', editable: 'never'},
+                            {title: 'Student Identifier', field: 'identifier', editable: 'never'},
                             {title: 'iClicker ID', field: 'iClicker'},
                         ].concat(
                             Object.keys(this.props.course.courseCategories).map((category) => {

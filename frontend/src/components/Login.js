@@ -194,6 +194,7 @@ class Login extends Component {
                             />
                             */}
 
+                            {/* Student/instructor toggle: temporarily disabled
                             <FormControl
                                 fullWidth
                                 margin="normal"
@@ -218,6 +219,7 @@ class Login extends Component {
                                     ))}
                                 </Select>
                             </FormControl>
+                            */}
                         </div>
                     }
 

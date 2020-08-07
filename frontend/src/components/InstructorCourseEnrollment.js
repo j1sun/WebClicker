@@ -24,6 +24,7 @@ import NavigateNextOutlinedIcon from '@material-ui/icons/NavigateNextOutlined';
 import NavigateBeforeOutlinedIcon from '@material-ui/icons/NavigateBeforeOutlined';
 import AttachFileOutlinedIcon from '@material-ui/icons/AttachFileOutlined';
 import GetAppOutlinedIcon from '@material-ui/icons/GetAppOutlined';
+import LinearProgress from '@material-ui/core/LinearProgress';
 
 import {fetchCourseStudents, setCourseStudents} from "../firebaseApi";
 
@@ -38,6 +39,7 @@ class InstructorCourseEnrollment extends Component {
         this.state = {
             studentsData: null,
             deletedStudents: [],
+            loading: false,
         };
 
         this.studentFileRef = React.createRef();
@@ -332,22 +334,28 @@ class InstructorCourseEnrollment extends Component {
                     <Button
                         color="primary"
                         onClick={() => {
+                            this.setState({loading: true});
+
                             let students = this.convertTableToStudents(this.state.studentsData, this.props.course.courseCategories);
                             let deleted = this.convertTableToStudents(this.state.deletedStudents, this.props.course.courseCategories);
+
 
                             let data = {
                                 courseID: this.props.course.courseID,
                                 students: students,
                                 deleted: deleted
                             };
-                            setCourseStudents(data);
 
-                            this.props.openCtl(false)
+                            setCourseStudents(data).then(() => {
+                                this.props.openCtl(false);
+                            });
                         }}
                     >
                         Save
                     </Button>
                 </DialogActions>
+
+                {this.state.loading && <LinearProgress />}
             </Dialog>
         );
     }

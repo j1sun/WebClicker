@@ -292,6 +292,7 @@ export const createCourse = (data) => {
     let courseTerm = data.courseTerm;
     let courseCode = data.courseCode;
     let courseCategories = data.courseCategories;
+    let modifiedCategories = data.modifiedCategories;
     let courseInstructorID = data.courseInstructorID;
     let isActive = data.isActive;
 
@@ -326,14 +327,35 @@ export const createCourse = (data) => {
                 courseActivityPollLive: false,
                 courseActivityPollDisplay: false,
                 isActive: isActive,
-            }).then(course => {
+            }).then(() => {
+                return firebase.firestore().collection('courses').doc(courseID).collection('students').get();
+            }).then(studentsSnapshot => {
+                return new Promise((resolve, reject) => {
+                    let promises = [];
+                    studentsSnapshot.forEach(studentSnapshot => {
+                        let promise = studentSnapshot.ref.update({
+                            studentCategories: Object.fromEntries(
+                                    Object.entries(studentSnapshot.get('studentCategories')).reduce((newEntries, [name, option]) => {
+                                        if (!modifiedCategories.includes(name)) {
+                                            newEntries.push([name, option])
+                                        }
+                                        return newEntries;
+                                    }, []),
+                                ),
+                        });
+                        promises.push(promise);
+                    });
+
+                    Promise.all(promises).then(() => {
+                        resolve();
+                    });
+                });
+            }).then(() => {
                 resolve(courseID);
             }).catch(err => {
                 console.log(err);
             });
         }
-
-        resolve('');
     });
 };
 

@@ -22,10 +22,11 @@ import FormHelperText from "@material-ui/core/FormHelperText";
 import IconButton from '@material-ui/core/IconButton';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import ClearIcon from '@material-ui/icons/Clear';
+import LinearProgress from '@material-ui/core/LinearProgress';
 
 import {createCourse, fetchCourses, generateCourseCode} from "../firebaseApi";
 import {changeCourses} from "../redux";
-import { blue } from '@material-ui/core/colors';
+import { blue, yellow } from '@material-ui/core/colors';
 
 const styles = theme => ({
     titleBar: {
@@ -43,7 +44,7 @@ const styles = theme => ({
     },
     clearButton: {
         marginLeft: '12px'
-    }
+    },
 });
 
 class InstructorCourseSettings extends React.Component {
@@ -54,11 +55,12 @@ class InstructorCourseSettings extends React.Component {
         this.state = {
             courseID: this.props.course === undefined ? '' : this.props.course.courseID,
             name: this.props.course === undefined ? '' : this.props.course.courseName,
-            term: this.props.course === undefined ? '' : this.props.course.courseTerm,
+            term: this.props.course === undefined ? '' : (this.props.course.courseTerm === undefined ? '' : this.props.course.courseTerm),
             courseCode: this.props.course === undefined ? "None" : (this.props.course.courseCode === undefined ? '' : this.props.course.courseCode),
             isActive: this.props.course === undefined || (this.props.course.isActive === undefined ? false : this.props.course.isActive),
             categoryNames: this.props.course === undefined ? [] : Object.keys(this.props.course.courseCategories),
-            optionNames: this.props.course === undefined ? [] : Object.values(this.props.course.courseCategories),
+            optionNames: this.props.course === undefined ? [] : Object.values(this.props.course.courseCategories).map(value => value.slice()),
+            loading: false,
 
             nameError: '',
             termError: '',
@@ -184,16 +186,26 @@ class InstructorCourseSettings extends React.Component {
                         label="Categories"
                         placeholder=""
                         value={this.state.categoryNames}
+                        helperText={
+                            this.props.course === undefined || Object.keys(this.props.course.courseCategories).filter(value => !this.state.categoryNames.includes(value)).length === 0 ?
+                                    "" :
+                                    "Warning: Deleted categories cannot be recovered!"
+                        }
                         onAdd={categoryName => {
                             let newCategoryNames = this.state.categoryNames;
                             let newOptionNames = this.state.optionNames;
                             let newOptionNamesErrors = this.state.optionNamesErrors;
                             newCategoryNames.push(categoryName);
-                            newOptionNames.push([]);
+                            
+                            if (this.props.course !== undefined && this.props.course.courseCategories[categoryName] !== undefined) {
+                                newOptionNames.push(this.props.course.courseCategories[categoryName].slice());
+                            } else {
+                                newOptionNames.push([]);
+                            }
                             newOptionNamesErrors.push("");
 
                             this.setState({
-                                categories: newCategoryNames,
+                                categoryNames: newCategoryNames,
                                 optionNames: newOptionNames,
                                 optionsErrors: newOptionNamesErrors,
                             });
@@ -207,7 +219,7 @@ class InstructorCourseSettings extends React.Component {
                             newOptionNamesErrors.splice(categoryIndex, 1);
 
                             this.setState({
-                                categories: newCategoryNames,
+                                categoryNames: newCategoryNames,
                                 optionNames: newOptionNames,
                                 optionsErrors: newOptionNamesErrors,
                             });
@@ -223,7 +235,14 @@ class InstructorCourseSettings extends React.Component {
                             placeholder=""
                             value={this.state.optionNames[categoryIndex]}
                             error={this.state.optionNamesErrors[categoryIndex].length !== 0}
-                            helperText={this.state.optionNamesErrors[categoryIndex]}
+                            helperText={
+                                this.state.optionNamesErrors[categoryIndex].length !== 0 ? 
+                                    this.state.optionNamesErrors[categoryIndex] :
+                                    this.props.course === undefined || this.props.course.courseCategories[categoryName] === undefined || this.props.course.courseCategories[categoryName].filter(value => !this.state.optionNames[categoryIndex].includes(value)).length === 0 ?
+                                        "" :
+                                        "Warning: Deleting this category's options will reset the student options for this category!"
+
+                            }
                             onAdd={optionName => {
                                 let newOptionNames = this.state.optionNames;
                                 let newOptionNamesErrors = this.state.optionNamesErrors;
@@ -264,6 +283,7 @@ class InstructorCourseSettings extends React.Component {
                         color="primary"
                         onClick={() => {
                             let error = false;
+                            this.setState({loading: true});
 
                             // The course name cannot be empty
                             if(this.state.name.length === 0) {
@@ -271,7 +291,7 @@ class InstructorCourseSettings extends React.Component {
                                 error = true;
                             }
 
-                            // The quarter cannot be empty
+                            // The term cannot be empty
                             if(this.state.term.length === 0) {
                                 this.setState({termError: 'Please specify a term (eg. Fall 2020).'});
                                 error = true;
@@ -290,9 +310,22 @@ class InstructorCourseSettings extends React.Component {
 
                             if(!error) {
                                 let courseCategories = {};
+                                let modifiedCategories = []; // Contains all categories that were deleted or had removed options
+
                                 this.state.categoryNames.forEach((categoryName, categoryIndex) => {
                                     courseCategories[categoryName] = this.state.optionNames[categoryIndex];
+
+                                    // Add all categories with removed options to modifiedCategories
+                                    if (this.props.course !== undefined && this.props.course.courseCategories[categoryName] !== undefined && this.props.course.courseCategories[categoryName].filter(value => !this.state.optionNames[categoryIndex].includes(value)).length !== 0) {
+                                        modifiedCategories.push(categoryName);
+                                    }
                                 });
+
+                                // Add all categories that were deleted to modifiedCategories
+                                modifiedCategories = modifiedCategories.concat(
+                                    this.props.course === undefined ? [] :
+                                        Object.keys(this.props.course.courseCategories).filter(value => !this.state.categoryNames.includes(value))
+                                );
 
                                 let data = {
                                     courseID: this.state.courseID,
@@ -300,6 +333,7 @@ class InstructorCourseSettings extends React.Component {
                                     courseTerm: this.state.term,
                                     courseCode: this.state.courseCode,
                                     courseCategories: courseCategories,
+                                    modifiedCategories: modifiedCategories,
                                     courseInstructorID: this.props.account.accountID,
                                     courseActivitySessionID: '',
                                     courseActivityPollID: '',
@@ -316,6 +350,8 @@ class InstructorCourseSettings extends React.Component {
                                         this.props.changeCourses(courses);
                                     });
                                 });
+                            } else {
+                                this.setState({loading: false});
                             }
                         }}
                     >
@@ -323,6 +359,7 @@ class InstructorCourseSettings extends React.Component {
                     </Button>
                 </DialogActions>
 
+                {this.state.loading && <LinearProgress />}
             </Dialog>
         );
     }

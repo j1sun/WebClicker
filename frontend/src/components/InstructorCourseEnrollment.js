@@ -25,8 +25,14 @@ import NavigateBeforeOutlinedIcon from '@material-ui/icons/NavigateBeforeOutline
 import AttachFileOutlinedIcon from '@material-ui/icons/AttachFileOutlined';
 import GetAppOutlinedIcon from '@material-ui/icons/GetAppOutlined';
 import LinearProgress from '@material-ui/core/LinearProgress';
+import Snackbar from '@material-ui/core/Snackbar';
+import MuiAlert from '@material-ui/lab/Alert';
 
 import {fetchCourseStudents, setCourseStudents} from "../firebaseApi";
+
+function Alert(props) {
+  return <MuiAlert elevation={6} variant="filled" {...props} />;
+}
 
 const styles = theme => ({
 });
@@ -40,6 +46,9 @@ class InstructorCourseEnrollment extends Component {
             studentsData: null,
             deletedStudents: [],
             loading: false,
+            error: false,
+            errorSeverity: null,
+            errorMessage: '',
         };
 
         this.studentFileRef = React.createRef();
@@ -79,41 +88,56 @@ class InstructorCourseEnrollment extends Component {
 
     convertStudentsToTable(students, courseCategories) {
         let studentsData = [];
-        for(let student of Object.values(students)) {
+
+        Object.entries(students).forEach(([studentID, student]) => {
             let studentData = {};
-            studentData['studentID'] = student.studentID;
+
+            studentData['studentID'] = studentID;
             studentData['name'] = student.name;
             studentData['identifier'] = student.identifier;
             studentData['iClicker'] = student.iClicker;
 
-            for(let category in student.studentCategories) {
-                studentData[category] = courseCategories[category].indexOf(student.studentCategories[category]);
-            }
+            Object.entries(student.studentCategories).forEach(([category, option]) => {
+                studentData[category] = courseCategories[category].indexOf(option);
+            });
+
             studentsData.push(studentData);
-        }
-        return studentsData
+        });
+
+        return studentsData;
     }
 
     convertTableToStudents(studentsData, courseCategories) {
         let students = {};
-        for(let studentData of studentsData) {
-            let student = {studentCategories: {}};
-            for(let columnName in studentData) {
-                if(columnName === 'studentID' || columnName === 'name' || columnName === 'identifier' || columnName === 'iClicker') {
-                    student[columnName] = studentData[columnName]
+
+        studentsData.forEach(studentData => {
+            let student = {
+                studentCategories: {},
+            };
+
+            Object.entries(studentData).forEach(([columnName, columnInfo]) => {
+                switch (columnName) {
+                    case "name":
+                    case "identifier":
+                    case "iClicker":
+                        student[columnName] = columnInfo
+                        break;
+                    case "studentID":
+                    case "tableData":
+                        break;
+                    default:
+                        let optionName = courseCategories[columnName][columnInfo];
+                        if(optionName !== undefined) {
+                            student['studentCategories'][columnName] = optionName;
+                        }
+                        break;
                 }
-                else if (columnName !== 'tableData') {
-                    let optionName = courseCategories[columnName][studentData[columnName]];
-                    if(optionName !== undefined) {
-                        student['studentCategories'][columnName] = optionName
-                    }
-                }
-            }
+            });
 
             students[studentData['studentID']] = student;
-        }
+        });
 
-        return students
+        return students;
     }
 
     render() {
@@ -152,7 +176,6 @@ class InstructorCourseEnrollment extends Component {
                         )}
                         data={this.state.studentsData === null ? [] : this.state.studentsData}
                         icons={{
-                            Add: AddOutlinedIcon,
                             Delete: DeleteOutlinedIcon,
                             Edit: EditOutlinedIcon,
                             Check: DoneOutlinedIcon,
@@ -180,59 +203,62 @@ class InstructorCourseEnrollment extends Component {
                                 tooltip: 'Download Excel File',
                                 isFreeAction: true,
                                 onClick: () => {
+                                    let csvData = [];
+
+                                    // Populate header of csv
+                                    let header = [];
+                                    header.push('Database ID');
+                                    header.push('Name');
+                                    header.push('Student identifier');
+                                    header.push('iClicker ID');
+                                    Object.entries(this.props.course.courseCategories).forEach(([category, options]) => {
+                                        let headerString = category + " (Options: ";
+                                        options.forEach(option => {
+                                            headerString += option + " | ";
+                                        })
+                                        headerString += "<blank> )"
+                                        header.push(headerString);
+                                    });
+                                    csvData.push(header);
+
+                                    this.state.studentsData.forEach(student => {
+                                        let row = [];
+                                        header.forEach(field => {
+                                            switch (field) {
+                                                case "Database ID":
+                                                    row.push(student['studentID']);
+                                                    break;
+                                                case "Name":
+                                                    row.push(student['name']);
+                                                    break;
+                                                case "Student identifier":
+                                                    row.push(student['identifier']);
+                                                    break;
+                                                case "iClicker ID":
+                                                    row.push(student['iClicker']);
+                                                    break;
+                                                case "tableData":
+                                                    break;
+                                                default:
+                                                    let categoryName = field.split(" (Options: ")[0];
+                                                    let optionName = this.props.course.courseCategories[categoryName][student[categoryName]];
+                                                    row.push(optionName);
+                                                    break;
+                                            }
+                                        });
+
+                                        csvData.push(row);
+                                    });
+
                                     let wb = XLSX.utils.book_new();
-
-                                    let studentSheet = [['Student ID'].concat(Object.keys(this.props.course.courseCategories))];
-                                    for (let student of this.state.studentsData) {
-                                        let row = [];
-                                        for (let field of studentSheet[0]) {
-                                            row.push(student[field]);
-                                        }
-                                        studentSheet.push(row);
-                                    }
-                                    let ws1 = XLSX.utils.json_to_sheet(studentSheet, {skipHeader: true});
-                                    XLSX.utils.book_append_sheet(wb, ws1, 'Student Sheet');
-
-                                    let instructionSheet = [
-                                        ['Instructions: '],
-                                        ['1. Only enter the number of each subcategory.'],
-                                        ['2. The number can only be -1, 0, 1, 2, 3, 4.'],
-                                        ['3. All other characters will be considered as Unknown subcategory.'],
-                                        ['4. Only the changes in the Student Sheet will be read when uploaded to the website.'],
-                                        [''],
-                                        ['Category', '-1', '0', '1', '2', '3', '4'],
-                                    ];
-                                    for (let category in this.props.course.courseCategories) {
-                                        let row = [];
-                                        row.push(category);
-                                        row.push('Unknown');
-                                        for (let subcategory of this.props.course.courseCategories[category]) {
-                                            row.push(subcategory);
-                                        }
-                                        instructionSheet.push(row);
-                                    }
-                                    let ws2 = XLSX.utils.json_to_sheet(instructionSheet, {skipHeader: true});
-                                    XLSX.utils.book_append_sheet(wb, ws2, 'Instruction Sheet');
-
-                                    XLSX.writeFile(wb, this.props.course.courseName + ' students.xlsx')
+                                    let ws = XLSX.utils.aoa_to_sheet(csvData);
+                                    let name = this.props.course.courseName + " Students";
+                                    XLSX.utils.book_append_sheet(wb, ws, name);
+                                    XLSX.writeFile(wb, name + ".csv");
                                 }
                             }
                         ]}
                         editable={{
-                            /* Adding students manually: temporarily disabled
-                            onRowAdd: newData => new Promise(resolve => {
-                                if (Object.keys(newData).length - 2 !== Object.keys(this.props.course.courseCategories).length) {
-                                    resolve();
-                                    return;
-                                }
-
-                                let newStudentsData = this.state.studentsData;
-                                newStudentsData.push(newData);
-                                this.setState({studentsData: newStudentsData});
-
-                                resolve();
-                            }),
-                            */
                             onRowUpdate: (newData, oldData) => new Promise(resolve => {
                                 if (Object.keys(newData).length - 4 !== Object.keys(this.props.course.courseCategories).length) {
                                     resolve();
@@ -264,64 +290,93 @@ class InstructorCourseEnrollment extends Component {
                         ref={this.studentFileRef}
                         className="FileInput"
                         type="file"
-                        accept=".xlsx"
+                        accept=".csv"
                         onChange={(event) => {
                             if (event.target.files.length !== 0) {
                                 let file = event.target.files[0];
 
-                                const reader = new FileReader();
-                                const rABS = !!reader.readAsBinaryString;
+                                if (file.type === "text/csv") {
 
-                                // Define how to extract the students from the excel file
-                                reader.onload = (event) => {
-                                    // Parse data
-                                    let wb = XLSX.read(event.target.result, {type: rABS ? 'binary' : 'array'});
+                                    const reader = new FileReader();
 
-                                    // Get student worksheet
-                                    let studentSheet = wb.Sheets[wb.SheetNames[0]];
-                                    // Convert student worksheet to json
-                                    let studentJson = XLSX.utils.sheet_to_json(studentSheet);
+                                    // Define how to extract the students from the excel file
+                                    reader.onload = (event) => {
+                                        // Parse data
+                                        var data = new Uint8Array(event.target.result);
+                                        var wb = XLSX.read(data, {type: 'array'});
 
-                                    // Convert student json to table format
-                                    let studentsData = [];
-                                    let students = {};
-                                    for (let row of studentJson) {
-                                        let data = {};
+                                        // Get student worksheet
+                                        let studentSheet = wb.Sheets[wb.SheetNames[0]];
+                                        // Convert student worksheet to json
+                                        let studentJson = XLSX.utils.sheet_to_json(studentSheet);
+                                        console.log(studentJson);
 
-                                        let student_id = String(row['Student ID']);
-                                        data['Student ID'] = student_id;
-                                        students[student_id] = {};
+                                        // Convert student json to table format
+                                        let studentsData = [];
+                                        studentJson.forEach(row => {
+                                            let data = {};
 
-                                        const valid_char = ['0', '1', '2', '3', '4', 'A', 'B', 'C', 'D', 'E'];
-                                        for (let field in row) {
-                                            if (field !== 'Student ID') {
-                                                let answerIndex = valid_char.indexOf(String(row[field]));
-                                                answerIndex = answerIndex >= 5 ? answerIndex - 5 : answerIndex;
+                                            let studentID = row['Database ID'];
+                                            data['studentID'] = studentID;
 
-                                                data[field] = answerIndex;
-                                                students[student_id][field] = answerIndex;
-                                            }
-                                        }
+                                            Object.entries(row).forEach(([field, fieldInfo]) => {
+                                                switch (field) {
+                                                    case 'Name':
+                                                        data['name'] = fieldInfo;
+                                                        break;
+                                                    case 'Student identifier':
+                                                        data['identifier'] = fieldInfo;
+                                                        break;
+                                                    case 'iClicker ID':
+                                                        data['iClicker'] = fieldInfo;
+                                                        break;
+                                                    case 'Database ID':
+                                                        break;
+                                                    default:
+                                                        let categoryName = field.split(" (Options: ")[0];
+                                                        data[categoryName] = this.props.course.courseCategories[categoryName].indexOf(fieldInfo);
+                                                        break;
+                                                }
+                                            });
 
-                                        studentsData.push(data)
-                                    }
+                                            studentsData.push(data);
+                                        });
 
-                                    this.setState({studentsData: studentsData});
-                                };
+                                        console.log(studentsData);
+                                        this.setState({studentsData: studentsData});
+                                    };
 
-                                if (rABS) {
-                                    reader.readAsBinaryString(file);
-                                } else {
                                     reader.readAsArrayBuffer(file);
+                                } else {
+                                    this.setState({
+                                        error: true,
+                                        errorSeverity: 'error',
+                                        errorMessage: "Invalid file type. Please upload a .csv file."
+                                    });
                                 }
                             }
                         }}
                     />
+
+                    <Snackbar
+                        open={this.state.error}
+                        autoHideDuration={5000}
+                        onClose={() => {
+                            this.setState({error: false});
+                        }}
+                    >
+                        <Alert
+                            onClose={() => {
+                                this.setState({error: false});
+                            }}
+                            severity={this.state.errorSeverity}
+                        >
+                            {this.state.errorMessage}
+                        </Alert>
+                    </Snackbar>
                 </DialogContent>
 
                 <DialogActions>
-                    <Typography color='error'>{this.state.errorMessage}</Typography>
-
                     <Button
                         color="primary"
                         onClick={() => {
@@ -338,7 +393,6 @@ class InstructorCourseEnrollment extends Component {
 
                             let students = this.convertTableToStudents(this.state.studentsData, this.props.course.courseCategories);
                             let deleted = this.convertTableToStudents(this.state.deletedStudents, this.props.course.courseCategories);
-
 
                             let data = {
                                 courseID: this.props.course.courseID,

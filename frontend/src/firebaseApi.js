@@ -368,11 +368,11 @@ export const fetchCourseStudents = (data) => {
 
             query.forEach((doc) => {
                 let student = {};
-                student['studentID'] = doc.id;
                 student['name'] = doc.get('name');
                 student['identifier'] = doc.get('identifier');
                 student['iClicker'] = doc.get('iClicker');
                 student['studentCategories'] = doc.get('studentCategories');
+
                 students[doc.id] = student;
             });
 

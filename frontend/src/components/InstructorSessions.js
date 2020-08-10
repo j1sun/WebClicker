@@ -108,6 +108,7 @@ class InstructorSessions extends Component {
                                     }}
                                 >
                                     <ListItemAvatar>
+                                        {/*
                                         <IconButton
                                             style={{padding: 0}}
                                             disabled={!this.props.open}
@@ -125,10 +126,13 @@ class InstructorSessions extends Component {
                                                 }
                                             }}
                                         >
+                                        */}
                                             <Avatar>
                                                 {this.state.selected.indexOf(session.sessionID) === -1 ? session.sessionIndex : <DoneIcon/>}
                                             </Avatar>
+                                        {/*
                                         </IconButton>
+                                        */}
                                     </ListItemAvatar>
 
                                     <ListItemText

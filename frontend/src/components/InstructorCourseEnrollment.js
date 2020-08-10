@@ -47,6 +47,7 @@ class InstructorCourseEnrollment extends Component {
             deletedStudents: [],
             loading: false,
             error: false,
+            errorStatus: null,
             errorSeverity: null,
             errorMessage: '',
         };
@@ -295,28 +296,28 @@ class InstructorCourseEnrollment extends Component {
                             if (event.target.files.length !== 0) {
                                 let file = event.target.files[0];
 
-                                if (file.type === "text/csv") {
+                                const reader = new FileReader();
 
-                                    const reader = new FileReader();
+                                // Define how to extract the students from the excel file
+                                reader.onload = (event) => {
+                                    // Parse data
+                                    var data = new Uint8Array(event.target.result);
+                                    var wb = XLSX.read(data, {type: 'array'});
 
-                                    // Define how to extract the students from the excel file
-                                    reader.onload = (event) => {
-                                        // Parse data
-                                        var data = new Uint8Array(event.target.result);
-                                        var wb = XLSX.read(data, {type: 'array'});
+                                    // Get student worksheet
+                                    let studentSheet = wb.Sheets[wb.SheetNames[0]];
+                                    // Convert student worksheet to json
+                                    let studentJson = XLSX.utils.sheet_to_json(studentSheet);
 
-                                        // Get student worksheet
-                                        let studentSheet = wb.Sheets[wb.SheetNames[0]];
-                                        // Convert student worksheet to json
-                                        let studentJson = XLSX.utils.sheet_to_json(studentSheet);
-                                        console.log(studentJson);
+                                    // Convert student json to table format
+                                    let studentsData = [];
+                                    for (let row of studentJson) {
+                                        let studentID = row['Database ID'];
+                                        let studentIndex = this.state.studentsData.findIndex(student => student['studentID'] === studentID);
 
-                                        // Convert student json to table format
-                                        let studentsData = [];
-                                        studentJson.forEach(row => {
+                                        if (this.state.studentsData[studentIndex] !== undefined) {
                                             let data = {};
 
-                                            let studentID = row['Database ID'];
                                             data['studentID'] = studentID;
 
                                             Object.entries(row).forEach(([field, fieldInfo]) => {
@@ -334,26 +335,30 @@ class InstructorCourseEnrollment extends Component {
                                                         break;
                                                     default:
                                                         let categoryName = field.split(" (Options: ")[0];
-                                                        data[categoryName] = this.props.course.courseCategories[categoryName].indexOf(fieldInfo);
+                                                        let categoryInfo = this.props.course.courseCategories[categoryName];
+                                                        if (categoryInfo !== undefined) {
+                                                            data[categoryName] = categoryInfo.indexOf(fieldInfo);
+                                                        }
                                                         break;
                                                 }
                                             });
 
                                             studentsData.push(data);
-                                        });
+                                        } else {
+                                            let errorMessage = 'Row ' + (studentJson.indexOf(row) + 1) + ': Student not found.'
+                                            this.setState({
+                                                error: true,
+                                                errorSeverity: 'error',
+                                                errorMessage: errorMessage,
+                                            });
+                                            return;
+                                        }
+                                    }
 
-                                        console.log(studentsData);
-                                        this.setState({studentsData: studentsData});
-                                    };
+                                    this.setState({studentsData: studentsData});
+                                };
 
-                                    reader.readAsArrayBuffer(file);
-                                } else {
-                                    this.setState({
-                                        error: true,
-                                        errorSeverity: 'error',
-                                        errorMessage: "Invalid file type. Please upload a .csv file."
-                                    });
-                                }
+                                reader.readAsArrayBuffer(file);
                             }
                         }}
                     />
@@ -361,13 +366,21 @@ class InstructorCourseEnrollment extends Component {
                     <Snackbar
                         open={this.state.error}
                         autoHideDuration={5000}
-                        onClose={() => {
-                            this.setState({error: false});
+                        onClose={(event, reason) => {
+                            if (reason !== 'clickaway') {
+                                this.setState({
+                                    error: false,
+                                });
+                            }
                         }}
                     >
                         <Alert
-                            onClose={() => {
-                                this.setState({error: false});
+                            onClose={(event, reason) => {
+                                if (reason !== 'clickaway') {
+                                    this.setState({
+                                        error: false,
+                                    });
+                                }
                             }}
                             severity={this.state.errorSeverity}
                         >

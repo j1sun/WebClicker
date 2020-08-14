@@ -154,13 +154,10 @@ class InstructorCourseEnrollment extends Component {
                 open={this.props.open}
                 onClose={() => {this.props.openCtl(false)}}
             >
-                <DialogTitle>
-                    {this.props.course.courseName + ' Students'}
-                </DialogTitle>
 
                 <DialogContent>
                     <MaterialTable
-                        title="Students"
+                        title={this.props.course.courseName + ' Students'}
                         columns={[
                             {title: 'Name', field: 'name', editable: 'never'},
                             {title: 'Student Identifier', field: 'identifier', editable: 'never'},

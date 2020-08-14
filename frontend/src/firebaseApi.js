@@ -449,6 +449,8 @@ export const getCourseVotes = (courseID) => {
          *   {
          *     studentName: 'studentName',
          *     studentID: 'studentID',
+         *     identifier: 'identifier',
+         *     iClicker: 'iClicker',
          *     studentCategories: [
          *       'optionA' // Option chosen for category1
          *        ...
@@ -490,8 +492,8 @@ export const getCourseVotes = (courseID) => {
                     data.push({
                         studentName: studentSnapshot.get('name'),
                         studentID: studentSnapshot.id,
-                        studentIdentifier: studentSnapshot.get('identifier'),
-                        studentIClicker: studentSnapshot.get('iClicker'),
+                        identifier: studentSnapshot.get('identifier'), // TODO: If you change identifiers to be course-exclusive, change this to courseStudentSnapshot
+                        iClicker: courseStudentSnapshot.get('iClicker'),
                         studentCategories: studentCategories,
                         studentVotes: [],
                     })
@@ -518,12 +520,12 @@ export const getCourseVotes = (courseID) => {
                         let promise1 = pollSnapshot.ref.collection('students').get().then(pollStudentsSnapshot => {
                             let students = [];
 
-
                             pollStudentsSnapshot.forEach(studentSnapshot => {
-                                console.log(studentSnapshot.id);
-                                students.push(studentSnapshot.id);
                                 let studentIndex = data.findIndex(obj => obj.studentID === studentSnapshot.id);
-                                data[studentIndex].studentVotes.push(studentSnapshot.get('studentVote'));
+                                if (studentIndex !== -1) {
+                                    students.push(studentSnapshot.id);
+                                    data[studentIndex].studentVotes.push(studentSnapshot.get('studentVote'));
+                                }
                             });
 
                             for (let i = 1; i < data.length; i++) {
@@ -748,6 +750,7 @@ export const activatePoll = (data) => {
                 firebase.firestore().collection('courses').doc(session.get('sessionCourseID')).update({
                     courseActivityPollID: poll.id,
                     courseActivityPollLive: true,
+                    courseActivityPollDisplay: false,
                 }).then(() => {
                     resolve();
                 }).catch(err => {
@@ -768,7 +771,6 @@ export const deactivatePoll = (data) => {
     return new Promise((resolve, reject) => {
         firebase.firestore().collection('courses').doc(courseID).update({
             courseActivityPollLive: false,
-            courseActivityPollDisplay: false, // TODO: Don't do this? Would keep show/hide but is a design choice
         }).then(() => {
             resolve();
         }).catch(err => {
@@ -847,7 +849,7 @@ export const saveStudentCourse = (data) => {
     let courseID = data.courseID;
     let accountID = data.accountID;
     let name = data.name;
-    let identifier = data.identifier;
+    let identifier = data.identifier === undefined ? '' : data.identifier;
 
     return new Promise((resolve, reject) => {
         firebase.firestore().collection('accounts').doc(accountID).update({
@@ -860,7 +862,6 @@ export const saveStudentCourse = (data) => {
                 } else {
                     courseStudentInfo.set({
                         studentCategories: {
-                            // TODO: Set all categories to undefined
                         },
                         name: name,
                         identifier: identifier,

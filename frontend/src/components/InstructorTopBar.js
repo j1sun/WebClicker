@@ -229,10 +229,11 @@ class InstructorTopBar extends React.Component {
                             <Grid item>
                                 {this.props.courses[this.props.match.params.courseID] === undefined ? null :
                                     <ButtonGroup
-                                        variant="outlined"
                                         size="small"
                                     >
                                         <Button
+                                            variant="contained"
+                                            color={this.props.courses[this.props.match.params.courseID].courseActivitySessionID === '' ? "primary" : "secondary"}
                                             size="small"
                                             onClick={() => {
                                                 if (this.props.courses[this.props.match.params.courseID].courseActivitySessionID === '') {
@@ -270,13 +271,14 @@ class InstructorTopBar extends React.Component {
                                                 }
                                             }}
                                         >
-                                            {this.props.courses[this.props.match.params.courseID].courseActivitySessionID === '' ? <AddIcon /> : "Stop Session " +
+                                            {this.props.courses[this.props.match.params.courseID].courseActivitySessionID === '' ? "New Session" : "Stop Session " +
                                                 (this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID] === undefined ? ''
                                                 : this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID].sessionIndex)}
                                         </Button>
 
                                         {this.props.courses[this.props.match.params.courseID].courseActivitySessionID !== '' ? null :
                                             <Button
+                                                variant="outlined"
                                                 onClick={() => {
                                                     this.props.sessionMenuOpenCtl(!this.props.sessionMenuOpen)
                                                 }}

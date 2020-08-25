@@ -114,72 +114,81 @@ class InstructorTopBar extends React.Component {
     render() {
         let mobile = this.props.width === 'sm' || this.props.width === 'xs';
 
-        let secondAppBar = this.props.courses[this.props.match.params.courseID] === undefined || this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID] === undefined ? null : (
-            <ListItem
-                className={this.props.classes.pollActions}
-                dense={true}
-            >
+        let secondAppBar = this.props.courses[this.props.match.params.courseID] === undefined ? null : (
+            this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID] === undefined ? (
                 <ListItemText
-                    primary={this.props.polls[this.props.courses[this.props.match.params.courseID].courseActivityPollID] === undefined ? 'No Poll is Active'
-                        : 'Poll ' + this.props.polls[this.props.courses[this.props.match.params.courseID].courseActivityPollID].pollIndex
-                        + (this.props.courses[this.props.match.params.courseID].courseActivityPollLive ? ' is running' : ' is stopped')}
-                    secondary={"Session " + (this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID] === undefined ? ''
-                        : this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID].sessionIndex)}
+                    primary={this.props.sessions[this.props.match.params.sessionID] === undefined ? '' : 'Viewing inactive session'}
+                    secondary={this.props.sessions[this.props.match.params.sessionID] === undefined ? '' : 'Session ' + this.props.sessions[this.props.match.params.sessionID].sessionIndex}
                 />
-                <CardActions>
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            if(!this.props.courses[this.props.match.params.courseID].courseActivityPollLive) {
-                                let data = {
-                                    pollStartTime: Date.now(),
-                                    pollSessionID: this.props.courses[this.props.match.params.courseID].courseActivitySessionID,
-                                    pollVotedColor: randomMC.getColor(),
-                                    pollCategories: this.props.courses[this.props.match.params.courseID].courseCategories,
-                                };
+            ) : (
+                <ListItem
+                    className={this.props.classes.pollActions}
+                    dense={true}
+                >
+                    <ListItemText
+                        primary={this.props.polls[this.props.courses[this.props.match.params.courseID].courseActivityPollID] === undefined ? 'No Poll is Active'
+                            : 'Poll ' + this.props.polls[this.props.courses[this.props.match.params.courseID].courseActivityPollID].pollIndex
+                            + (this.props.courses[this.props.match.params.courseID].courseActivityPollLive ? ' is running' : ' is stopped')}
+                        secondary={"Session " + (this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID] === undefined ? ''
+                            : this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID].sessionIndex)}
+                    />
 
-                                createPoll(data).then(pollID => {
+                    <CardActions>
+                        <Button
+                            size="small"
+                            color={this.props.courses[this.props.match.params.courseID].courseActivityPollLive ? 'secondary' : 'primary'}
+                            onClick={() => {
+                                if(!this.props.courses[this.props.match.params.courseID].courseActivityPollLive) {
                                     let data = {
-                                        pollID: pollID,
+                                        pollStartTime: Date.now(),
+                                        pollSessionID: this.props.courses[this.props.match.params.courseID].courseActivitySessionID,
+                                        pollVotedColor: randomMC.getColor(),
+                                        pollCategories: this.props.courses[this.props.match.params.courseID].courseCategories,
                                     };
 
-                                    activatePoll(data).then(() => {
+                                    createPoll(data).then(pollID => {
                                         let data = {
-                                            sessionID: this.props.courses[this.props.match.params.courseID].courseActivitySessionID,
+                                            pollID: pollID,
                                         };
 
-                                        fetchPolls(data).then(polls => {
-                                            this.props.changePolls(polls);
+                                        activatePoll(data).then(() => {
+                                            let data = {
+                                                sessionID: this.props.courses[this.props.match.params.courseID].courseActivitySessionID,
+                                            };
+
+                                            fetchPolls(data).then(polls => {
+                                                this.props.changePolls(polls);
+                                            });
                                         });
                                     });
-                                });
-                            }
-                            else {
+                                }
+                                else {
+                                    let data = {
+                                        courseID: this.props.match.params.courseID,
+                                    };
+
+                                    deactivatePoll(data);
+                                }
+                            }}
+                        >
+                            {!this.props.courses[this.props.match.params.courseID].courseActivityPollLive ? 'New Poll' : 'Stop Poll'}
+                        </Button>
+
+                        <Button
+                            size="small"
+                            onClick={() => {
                                 let data = {
                                     courseID: this.props.match.params.courseID,
+                                    displayPoll: !this.props.courses[this.props.match.params.courseID].courseActivityPollDisplay,
                                 };
-
-                                deactivatePoll(data);
-                            }
-                        }}
-                    >
-                        {!this.props.courses[this.props.match.params.courseID].courseActivityPollLive ? 'New Poll' : 'Stop Poll'}
-                    </Button>
-
-                    <Button
-                        size="small"
-                        onClick={() => {
-                            let data = {
-                                courseID: this.props.match.params.courseID,
-                                displayPoll: !this.props.courses[this.props.match.params.courseID].courseActivityPollDisplay,
-                            };
-                            displayPoll(data);
-                        }}
-                    >
-                        {this.props.courses[this.props.match.params.courseID].courseActivityPollDisplay ? 'Hide Results' : 'Push Results'}
-                    </Button>
-                </CardActions>
-            </ListItem>
+                                displayPoll(data);
+                            }}
+                        >
+                            {this.props.courses[this.props.match.params.courseID].courseActivityPollDisplay ? 'Hide Results' : 'Push Results'}
+                        </Button>
+                    </CardActions>
+                </ListItem>
+            )
         );
 
         return (
@@ -276,7 +285,7 @@ class InstructorTopBar extends React.Component {
                                                 : this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID].sessionIndex)}
                                         </Button>
 
-                                        {this.props.courses[this.props.match.params.courseID].courseActivitySessionID !== '' ? null :
+                                        {// this.props.courses[this.props.match.params.courseID].courseActivitySessionID !== '' ? null :
                                             <Button
                                                 variant="outlined"
                                                 onClick={() => {

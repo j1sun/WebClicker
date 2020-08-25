@@ -115,12 +115,7 @@ class InstructorTopBar extends React.Component {
         let mobile = this.props.width === 'sm' || this.props.width === 'xs';
 
         let secondAppBar = this.props.courses[this.props.match.params.courseID] === undefined ? null : (
-            this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID] === undefined ? (
-                <ListItemText
-                    primary={this.props.sessions[this.props.match.params.sessionID] === undefined ? '' : 'Viewing inactive session'}
-                    secondary={this.props.sessions[this.props.match.params.sessionID] === undefined ? '' : 'Session ' + this.props.sessions[this.props.match.params.sessionID].sessionIndex}
-                />
-            ) : (
+            this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID] === undefined ? null : (
                 <ListItem
                     className={this.props.classes.pollActions}
                     dense={true}
@@ -285,16 +280,14 @@ class InstructorTopBar extends React.Component {
                                                 : this.props.sessions[this.props.courses[this.props.match.params.courseID].courseActivitySessionID].sessionIndex)}
                                         </Button>
 
-                                        {// this.props.courses[this.props.match.params.courseID].courseActivitySessionID !== '' ? null :
-                                            <Button
-                                                variant="outlined"
-                                                onClick={() => {
-                                                    this.props.sessionMenuOpenCtl(!this.props.sessionMenuOpen)
-                                                }}
-                                            >
-                                                Sessions
-                                            </Button>
-                                        }
+                                        <Button
+                                            variant="outlined"
+                                            onClick={() => {
+                                                this.props.sessionMenuOpenCtl(!this.props.sessionMenuOpen)
+                                            }}
+                                        >
+                                            {this.props.sessions[this.props.match.params.sessionID] === undefined ? 'Sessions' : 'Session ' + this.props.sessions[this.props.match.params.sessionID].sessionIndex}
+                                        </Button>
                                     </ButtonGroup>
                                 }
                             </Grid>

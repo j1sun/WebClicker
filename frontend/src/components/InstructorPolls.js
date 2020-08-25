@@ -7,6 +7,7 @@ import SwipeableViews from 'react-swipeable-views';
 import {withStyles} from '@material-ui/core/styles';
 import withWidth from "@material-ui/core/withWidth";
 import Container from "@material-ui/core/Container";
+import Typography from '@material-ui/core/Typography';
 
 import InstructorPoll from "./InstructorPoll";
 import {changePolls} from "../redux";
@@ -23,6 +24,12 @@ const styles = theme => ({
             duration: theme.transitions.duration.leavingScreen,
         }),
     }),
+    noPollsText: {
+        ...theme.typography.button,
+        display: 'flex',
+        justifyContent: 'center',
+        paddingTop: '24px'
+    }
 });
 
 class InstructorPolls extends React.Component {
@@ -71,7 +78,13 @@ class InstructorPolls extends React.Component {
             <div className={mobile ? null : this.props.classes.mainPage}>
                 <div className={this.props.classes.appBarSpacer}/>
 
-                {mobile ?
+                {Object.keys(this.props.polls).length !== 0 ? null :
+                    <Typography className={this.props.classes.noPollsText}>
+                        No polls in session
+                    </Typography>
+                }
+
+                {/* mobile ? // Temporarily disabled swipeable views due to bugs
                     <SwipeableViews
                         index={Math.max(0, Object.keys(this.props.polls).length - 1)}
                     >
@@ -86,7 +99,7 @@ class InstructorPolls extends React.Component {
                             )
                         })}
                     </SwipeableViews>
-                    :
+                    : */
                     <Container maxWidth="md">
                         {Object.values(this.props.polls).reverse().map((poll, index) => {
                             index = Object.values(this.props.polls).length - index;

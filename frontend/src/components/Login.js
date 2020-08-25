@@ -17,6 +17,7 @@ import FormControl from "@material-ui/core/FormControl";
 import InputLabel from "@material-ui/core/InputLabel";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
+import { FormGroup } from '@material-ui/core';
 
 const styles = theme => ({
     paper: {
@@ -34,6 +35,10 @@ const styles = theme => ({
     button: {
         marginTop: theme.spacing(3),
     },
+    nameContainer: {
+        display: 'flex',
+        flexDirection: 'row',
+    },
 });
 
 class Login extends Component {
@@ -47,7 +52,8 @@ class Login extends Component {
             email: '',
             password: '',
             repeatPassword: '',
-            name: '',
+            firstName: '',
+            lastName: '',
             identifier: '',
             note: '',
             type: 'student',
@@ -56,7 +62,8 @@ class Login extends Component {
             emailError: '',
             passwordError: '',
             repeatPasswordError: '',
-            nameError: '',
+            firstNameError: '',
+            lastNameError: '',
         };
     }
 
@@ -87,7 +94,8 @@ class Login extends Component {
                                 email: '',
                                 password: '',
                                 repeatPassword: '',
-                                name: '',
+                                firstName: '',
+                                lastName: '',
                                 note: '',
                                 type: 'student',
 
@@ -95,7 +103,8 @@ class Login extends Component {
                                 emailError: '',
                                 passwordError: '',
                                 repeatPasswordError: '',
-                                nameError: '',
+                                firstNameError: '',
+                                lastNameError: '',
                             })
                         }}
                     >
@@ -103,41 +112,108 @@ class Login extends Component {
                         <Tab label="Sign Up" />
                     </Tabs>
 
-                    <TextField
-                        fullWidth
-                        margin="normal"
-                        type="email"
-                        label="UCSD Email"
-                        value={this.state.email}
-                        error={this.state.emailError.length !== 0}
-                        helperText={this.state.emailError}
-                        onChange={(event) => {
-                            this.setState({
-                                email: event.target.value,
-                                emailError: '',
-                            });
-                        }}
-                    />
 
-                    <TextField
-                        fullWidth
-                        margin="normal"
-                        type="password"
-                        label="Password"
-                        value={this.state.password}
-                        error={this.state.passwordError.length !== 0}
-                        helperText={this.state.passwordError}
-                        onChange={(event) => {
-                            this.setState({
-                                password: event.target.value,
-                                passwordError: '',
-                                repeatPasswordError: '',
-                            });
-                        }}
-                    />
+                    { this.state.tab !== 0 ? null :
+                        <div>
+                            <TextField
+                                fullWidth
+                                margin="normal"
+                                type="email"
+                                label="Email address"
+                                value={this.state.email}
+                                error={this.state.emailError.length !== 0}
+                                helperText={this.state.emailError}
+                                onChange={(event) => {
+                                    this.setState({
+                                        email: event.target.value,
+                                        emailError: '',
+                                    });
+                                }}
+                            />
+
+                            <TextField
+                                fullWidth
+                                margin="normal"
+                                type="password"
+                                label="Password"
+                                value={this.state.password}
+                                error={this.state.passwordError.length !== 0}
+                                helperText={this.state.passwordError}
+                                onChange={(event) => {
+                                    this.setState({
+                                        password: event.target.value,
+                                        passwordError: '',
+                                        repeatPasswordError: '',
+                                    });
+                                }}
+                            />
+                        </div>
+                    }
 
                     {this.state.tab === 0 ? null :
                         <div>
+                            <FormControl className={this.props.classes.nameContainer}>
+                                <TextField
+                                    fullWidth
+                                    margin="normal"
+                                    label="First Name"
+                                    error={this.state.firstNameError.length !== 0}
+                                    helperText={this.state.firstNameError}
+                                    onChange={(event) => {
+                                        this.setState({
+                                            firstName: event.target.value,
+                                            firstNameError: '',
+                                        });
+                                    }}
+                                />
+
+                                <TextField
+                                    fullWidth
+                                    margin="normal"
+                                    label="Last Name"
+                                    error={this.state.lastNameError.length !== 0}
+                                    helperText={this.state.lastNameError}
+                                    onChange={(event) => {
+                                        this.setState({
+                                            lastName: event.target.value,
+                                            lastNameError: '',
+                                        });
+                                    }}
+                                />
+                            </FormControl>
+
+                            <TextField
+                                fullWidth
+                                margin="normal"
+                                type="email"
+                                label="Email address"
+                                value={this.state.email}
+                                error={this.state.emailError.length !== 0}
+                                helperText={this.state.emailError}
+                                onChange={(event) => {
+                                    this.setState({
+                                        email: event.target.value,
+                                        emailError: '',
+                                    });
+                                }}
+                            />
+
+                            <TextField
+                                fullWidth
+                                margin="normal"
+                                type="password"
+                                label="Password"
+                                value={this.state.password}
+                                error={this.state.passwordError.length !== 0}
+                                helperText={this.state.passwordError}
+                                onChange={(event) => {
+                                    this.setState({
+                                        password: event.target.value,
+                                        passwordError: '',
+                                        repeatPasswordError: '',
+                                    });
+                                }}
+                            />
                             <TextField
                                 fullWidth
                                 margin="normal"
@@ -153,19 +229,6 @@ class Login extends Component {
                                 }}
                             />
 
-                            <TextField
-                                fullWidth
-                                margin="normal"
-                                label="Full Name"
-                                error={this.state.nameError.length !== 0}
-                                helperText={this.state.nameError}
-                                onChange={(event) => {
-                                    this.setState({
-                                        name: event.target.value,
-                                        nameError: '',
-                                    });
-                                }}
-                            />
 
                             <TextField
                                 fullWidth
@@ -252,14 +315,18 @@ class Login extends Component {
                                     if(this.state.password !== this.state.repeatPassword) {
                                         this.setState({repeatPasswordError: 'Password mismatch',})
                                     }
-                                    else if(this.state.name === '') {
-                                        this.setState({nameError: 'Name cannot be empty',})
+                                    else if(this.state.firstName === '') {
+                                        this.setState({firstNameError: 'First name cannot be empty',})
+                                    }
+                                    else if(this.state.lastName === '') {
+                                        this.setState({lastNameError: 'Last name cannot be empty',})
                                     }
                                     else {
                                         let data = {
                                             email: this.state.email,
                                             password: this.state.password,
-                                            name: this.state.name,
+                                            firstName: this.state.firstName,
+                                            lastName: this.state.lastName,
                                             identifier: this.state.identifier,
                                             note: this.state.note,
                                             type: this.state.type,

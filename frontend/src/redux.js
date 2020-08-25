@@ -34,8 +34,10 @@ export const changePolls = (data) => ({
 let initialState = {
     /*
     {
-        accountID: 'Joeyonng',
-        accountName: 'Litao Qiao',
+        accountID: User credential if anonymous; otherwise user email,
+        accountEmail: 'johnsmith@ucsd.edu',
+        accountFirstName: 'John',
+        accountLastName: 'Smith',
         accountType: 'instructor',
     }
      */

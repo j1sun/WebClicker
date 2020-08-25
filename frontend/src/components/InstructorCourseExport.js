@@ -36,7 +36,8 @@ class InstructorCourseExport extends Component {
          *     ]
          *   },
          *   {
-         *     studentName: 'studentName',
+         *     studentFirstName: 'studentFirstName',
+         *     studentLastName: 'studentLastName',
          *     studentID: 'studentID',
          *     identifer: 'identifier',
          *     iClicker: 'iClicker',
@@ -58,8 +59,9 @@ class InstructorCourseExport extends Component {
 
             // Populate first row of csv
             csvData.push([]);
-            csvData[0].push("Name");
-            csvData[0].push("Database ID");
+            csvData[0].push("Email");
+            csvData[0].push("Last Name");
+            csvData[0].push("First Name");
             csvData[0].push("Student identifier");
             csvData[0].push("iClicker ID");
             data[0].categories.forEach(category => {
@@ -81,7 +83,7 @@ class InstructorCourseExport extends Component {
             // Populate second row of csv
             csvData.push([]);
             // Blank for student info
-            for (let i = 0; i < 4 + data[0].categories.length; i++) {
+            for (let i = 0; i < 5 + data[0].categories.length; i++) {
                 csvData[1].push(undefined);
             }
             // Poll# for each session
@@ -99,8 +101,9 @@ class InstructorCourseExport extends Component {
                 csvData.push([]);
 
                 // Student name and ID
-                csvData[i + 1].push(student.studentName);
                 csvData[i + 1].push(student.studentID);
+                csvData[i + 1].push(student.studentLastName);
+                csvData[i + 1].push(student.studentFirstName);
                 csvData[i + 1].push(student.identifier);
                 csvData[i + 1].push(student.iClicker);
 

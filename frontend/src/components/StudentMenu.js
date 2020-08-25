@@ -101,7 +101,7 @@ class StudentMenu extends Component {
 
                     <ListItem className={this.props.classes.headerListItem}>
                         <ListItemText
-                            primary={this.props.account.accountName}
+                            primary={this.props.account.accountFirstName + " " + this.props.account.accountLastName}
                             secondary={this.props.account.accountEmail}
                         />
                         <IconButton
@@ -212,7 +212,9 @@ class StudentMenu extends Component {
                                         let data = {
                                             accountID: this.props.account.accountID,
                                             courseID: course.courseID,
-                                            name: this.props.account.accountName,
+                                            firstName: this.props.account.accountFirstName,
+                                            lastName: this.props.account.accountLastName,
+                                            identifier: this.props.account.identifier,
                                         };
 
                                         saveStudentCourse(data);

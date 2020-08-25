@@ -24,25 +24,27 @@ export const listenAuthorization = () => {
 
                     account['accountID'] = user.uid;
                     account['accountEmail'] = '';
-                    account['accountName'] = 'Anonymous';
+                    account['accountFirstName'] = 'Anonymous';
+                    account['accountLastName'] = '';
                     account['accountType'] = 'student';
 
                     resolve(account);
                 }
                 else {
-                    firebase.app().firestore().collection('accounts').where('email', '==', user.email).get().then(query => {
+                    firebase.app().firestore().collection('accounts').doc(user.email).get().then(userDoc => {
                         let account = {};
 
-                        account['accountID'] = query.docs[0].id;
-                        account['accountEmail'] = query.docs[0].get('email');
-                        account['accountName'] = query.docs[0].get('name');
-                        account['accountType'] = query.docs[0].get('type');
+                        account['accountID'] = userDoc.id;
+                        account['accountEmail'] = userDoc.id;
+                        account['accountFirstName'] = userDoc.get('firstName');
+                        account['accountLastName'] = userDoc.get('lastName');
+                        account['accountType'] = userDoc.get('type');
 
                         resolve(account);
                     });
                 }
             } else {
-                reject()
+                reject();
             }
         });
     });
@@ -55,7 +57,8 @@ export const anonymousSignIn = () => {
 
             account['accountID'] = userCredential.user.uid;
             account['accountEmail'] = '';
-            account['accountName'] = 'Anonymous';
+            account['accountFirstName'] = 'Anonymous';
+            account['accountLastName'] = '';
             account['accountType'] = 'student';
 
             resolve(account);
@@ -71,13 +74,14 @@ export const signIn = (data) => {
 
     return new Promise((resolve, reject) => {
         firebase.auth().signInWithEmailAndPassword(email, password).then(userCredential => {
-            firebase.app().firestore().collection('accounts').where('email', '==', email).get().then(query => {
+            firebase.app().firestore().collection('accounts').doc(email).get().then(userDoc => {
                 let account = {};
 
-                account['accountID'] = query.docs[0].id;
-                account['accountEmail'] = query.docs[0].get('email');
-                account['accountName'] = query.docs[0].get('name');
-                account['accountType'] = query.docs[0].get('type');
+                account['accountID'] = userDoc.id;
+                account['accountEmail'] = userDoc.id;
+                account['accountFirstName'] = userDoc.get('firstName');
+                account['accountLastName'] = userDoc.get('lastName');
+                account['accountType'] = userDoc.get('type');
 
                 resolve(account);
             });
@@ -102,27 +106,30 @@ export const signIn = (data) => {
 export const signUp = (data) => {
     let email = data.email;
     let password = data.password;
-    let name = data.name;
+    // Auto-capitalize first letter of first/last name
+    let firstName = data.firstName.charAt(0).toUpperCase() + data.firstName.slice(1);
+    let lastName = data.lastName.charAt(0).toUpperCase() + data.lastName.slice(1);
     let identifier = data.identifier;
     let note = data.note;
     let type = data.type;
 
     return new Promise((resolve, reject) => {
         firebase.auth().createUserWithEmailAndPassword(email, password).then(() => {
-            firebase.app().firestore().collection('accounts').doc().set({
-                email: email,
-                name: name,
+            firebase.app().firestore().collection('accounts').doc(email).set({
+                firstName: firstName,
+                lastName: lastName,
                 identifier: identifier,
                 note: note,
                 type: type,
             }).then(() => {
-                firebase.app().firestore().collection('accounts').where('email', '==', email).get().then(query => {
+                firebase.app().firestore().collection('accounts').doc(email).get().then(userDoc => {
                     let account = {};
 
-                    account['accountID'] = query.docs[0].id;
-                    account['accountEmail'] = query.docs[0].get('email');
-                    account['accountName'] = query.docs[0].get('name');
-                    account['accountType'] = query.docs[0].get('type');
+                    account['accountID'] = userDoc.id;
+                    account['accountEmail'] = userDoc.id;
+                    account['accountFirstName'] = userDoc.get('firstName');
+                    account['accountLastName'] = userDoc.get('lastName');
+                    account['accountType'] = userDoc.get('type');
 
                     resolve(account);
                 });
@@ -363,12 +370,13 @@ export const fetchCourseStudents = (data) => {
     let courseID = data.courseID;
 
     return new Promise((resolve, reject) => {
-        firebase.firestore().collection('courses').doc(courseID).collection('students').orderBy('name').get().then(query => {
+        firebase.firestore().collection('courses').doc(courseID).collection('students').orderBy('lastName').get().then(query => {
             let students = {};
 
             query.forEach((doc) => {
                 let student = {};
-                student['name'] = doc.get('name');
+                student['firstName'] = doc.get('firstName');
+                student['lastName'] = doc.get('lastName');
                 student['identifier'] = doc.get('identifier');
                 student['iClicker'] = doc.get('iClicker');
                 student['studentCategories'] = doc.get('studentCategories');
@@ -414,7 +422,8 @@ export const setCourseStudents = (data) => {
 
         for(let studentID in students) {
             let promise = firebase.firestore().collection('courses').doc(courseID).collection('students').doc(studentID).set({
-                name: students[studentID]['name'],
+                firstName: students[studentID]['firstName'],
+                lastName: students[studentID]['lastName'],
                 identifier: students[studentID]['identifier'] === undefined ? '' : students[studentID]['identifier'],
                 iClicker: students[studentID]['iClicker'] === undefined ? '' : students[studentID]['iClicker'],
                 studentCategories: students[studentID]['studentCategories'],
@@ -447,7 +456,8 @@ export const getCourseVotes = (courseID) => {
          *     ]
          *   },
          *   {
-         *     studentName: 'studentName',
+         *     studentFirstName: 'studentFirstName',
+         *     studentLastName: 'studentLastName',
          *     studentID: 'studentID',
          *     identifier: 'identifier',
          *     iClicker: 'iClicker',
@@ -490,7 +500,8 @@ export const getCourseVotes = (courseID) => {
                 let promise = firebase.firestore().collection('accounts').doc(courseStudentSnapshot.id).get().then(studentSnapshot => {
 
                     data.push({
-                        studentName: studentSnapshot.get('name'),
+                        studentFirstName: studentSnapshot.get('firstName'),
+                        studentLastName: studentSnapshot.get('lastName'),
                         studentID: studentSnapshot.id,
                         identifier: studentSnapshot.get('identifier'), // TODO: If you change identifiers to be course-exclusive, change this to courseStudentSnapshot
                         iClicker: courseStudentSnapshot.get('iClicker'),
@@ -848,33 +859,40 @@ export const setPollStudent = (data) => {
 export const saveStudentCourse = (data) => {
     let courseID = data.courseID;
     let accountID = data.accountID;
-    let name = data.name;
-    let identifier = data.identifier === undefined ? '' : data.identifier;
+    let firstName = data.firstName;
+    let lastName = data.lastName;
 
     return new Promise((resolve, reject) => {
-        firebase.firestore().collection('accounts').doc(accountID).update({
-            studentCourses: firebase.firestore.FieldValue.arrayUnion(courseID)
-        }).then(() => {
-            let courseStudentInfo = firebase.firestore().collection('courses').doc(courseID).collection('students').doc(accountID);
-            courseStudentInfo.get().then(snapshot => {
-                if (snapshot.exists) {
-                    resolve();
-                } else {
-                    courseStudentInfo.set({
-                        studentCategories: {
-                        },
-                        name: name,
-                        identifier: identifier,
-                        iClicker: '',
-                    }).then(() => {
+        let accountRef = firebase.firestore().collection('accounts').doc(accountID);
+
+        accountRef.get().then(accountDoc => {
+            accountRef.update({
+                studentCourses: firebase.firestore.FieldValue.arrayUnion(courseID)
+            }).then(() => {
+                let courseStudentInfo = firebase.firestore().collection('courses').doc(courseID).collection('students').doc(accountID);
+                courseStudentInfo.get().then(snapshot => {
+                    if (snapshot.exists) {
                         resolve();
-                    }).catch(err => {
-                        console.log(err);
-                    });
-                }
+                    } else {
+                        courseStudentInfo.set({
+                            studentCategories: {
+                            },
+                            firstName: firstName,
+                            lastName: lastName,
+                            identifier: accountDoc.get('identifier') === undefined ? '' : accountDoc.get('identifier'),
+                            iClicker: '',
+                        }).then(() => {
+                            resolve();
+                        }).catch(err => {
+                            console.log(err);
+                        });
+                    }
+                }).catch(err => {
+                    console.log(err);
+                });
             }).catch(err => {
                 console.log(err);
-            });
+            })
         }).catch(err => {
             console.log(err);
         });

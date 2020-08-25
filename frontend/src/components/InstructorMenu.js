@@ -110,7 +110,7 @@ class InstructorMenu extends Component {
 
                     <ListItem className={this.props.classes.headerListItem}>
                         <ListItemText
-                            primary={this.props.account.accountName}
+                            primary={this.props.account.accountFirstName + " " + this.props.account.accountLastName}
                             secondary={this.props.account.accountEmail}
                         />
                         <IconButton

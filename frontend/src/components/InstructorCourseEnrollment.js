@@ -94,7 +94,8 @@ class InstructorCourseEnrollment extends Component {
             let studentData = {};
 
             studentData['studentID'] = studentID;
-            studentData['name'] = student.name;
+            studentData['firstName'] = student.firstName;
+            studentData['lastName'] = student.lastName;
             studentData['identifier'] = student.identifier;
             studentData['iClicker'] = student.iClicker;
 
@@ -118,7 +119,8 @@ class InstructorCourseEnrollment extends Component {
 
             Object.entries(studentData).forEach(([columnName, columnInfo]) => {
                 switch (columnName) {
-                    case "name":
+                    case "firstName":
+                    case "lastName":
                     case "identifier":
                     case "iClicker":
                         student[columnName] = columnInfo
@@ -159,7 +161,9 @@ class InstructorCourseEnrollment extends Component {
                     <MaterialTable
                         title={this.props.course.courseName + ' Students'}
                         columns={[
-                            {title: 'Name', field: 'name', editable: 'never'},
+                            {title: 'Email', field: 'studentID', editable: 'never'},
+                            {title: 'Last Name', field: 'lastName', editable: 'never'},
+                            {title: 'First Name', field: 'firstName', editable: 'never'},
                             {title: 'Student Identifier', field: 'identifier', editable: 'never'},
                             {title: 'iClicker ID', field: 'iClicker'},
                         ].concat(
@@ -205,8 +209,9 @@ class InstructorCourseEnrollment extends Component {
 
                                     // Populate header of csv
                                     let header = [];
-                                    header.push('Database ID');
-                                    header.push('Name');
+                                    header.push('Email');
+                                    header.push('First Name');
+                                    header.push('Last Name');
                                     header.push('Student identifier');
                                     header.push('iClicker ID');
                                     Object.entries(this.props.course.courseCategories).forEach(([category, options]) => {
@@ -223,11 +228,14 @@ class InstructorCourseEnrollment extends Component {
                                         let row = [];
                                         header.forEach(field => {
                                             switch (field) {
-                                                case "Database ID":
+                                                case "Email":
                                                     row.push(student['studentID']);
                                                     break;
-                                                case "Name":
-                                                    row.push(student['name']);
+                                                case "First Name":
+                                                    row.push(student['firstName']);
+                                                    break;
+                                                case "Last Name":
+                                                    row.push(student['lastName']);
                                                     break;
                                                 case "Student identifier":
                                                     row.push(student['identifier']);
@@ -258,7 +266,7 @@ class InstructorCourseEnrollment extends Component {
                         ]}
                         editable={{
                             onRowUpdate: (newData, oldData) => new Promise(resolve => {
-                                if (Object.keys(newData).length - 4 !== Object.keys(this.props.course.courseCategories).length) {
+                                if (Object.keys(newData).length - 5 !== Object.keys(this.props.course.courseCategories).length) {
                                     resolve();
                                     return;
                                 }
@@ -309,7 +317,7 @@ class InstructorCourseEnrollment extends Component {
                                     // Convert student json to table format
                                     let studentsData = [];
                                     for (let row of studentJson) {
-                                        let studentID = row['Database ID'];
+                                        let studentID = row['Email'];
                                         let studentIndex = this.state.studentsData.findIndex(student => student['studentID'] === studentID);
 
                                         if (this.state.studentsData[studentIndex] !== undefined) {
@@ -319,8 +327,11 @@ class InstructorCourseEnrollment extends Component {
 
                                             Object.entries(row).forEach(([field, fieldInfo]) => {
                                                 switch (field) {
-                                                    case 'Name':
-                                                        data['name'] = fieldInfo;
+                                                    case 'First Name':
+                                                        data['firstName'] = fieldInfo;
+                                                        break;
+                                                    case 'Last Name':
+                                                        data['lastName'] = fieldInfo;
                                                         break;
                                                     case 'Student identifier':
                                                         data['identifier'] = fieldInfo;

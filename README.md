@@ -14,6 +14,7 @@
 - Start the development server `npm start`
 
 # To build:
+### Note: All commands must be run in the `./frontend` folder.
 - Initialize the Firebase CLI: `firebase init`
     > - Select the Firestore, Hosting, and Storage options
     > - Change the default public folder to navigate to `build`
@@ -23,31 +24,65 @@
     > 1. In `./frontend/firebase.json`, replace all text with the following:
     ```
     {
-        "firestore": {
-            "rules": "firestore.rules",
-            "indexes": "firestore.indexes.json"
+    "firestore": {
+        "rules": "firestore.rules",
+        "indexes": "firestore.indexes.json"
+    },
+    "hosting": [
+        {
+        "target": "test",
+        "public": "build",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "rewrites": [
+            {
+            "source": "**",
+            "destination": "/index.html"
+            }
+        ]
         },
-        "hosting": {
-            "public": "build",
-            "ignore": [
-                "firebase.json",
-                "**/.*",
-                "**/node_modules/**"
-            ],
-            "rewrites": [
-                {
-                    "source": "**",
-                    "destination": "/index.html"
+        {
+        "target": "official",
+        "public": "build",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "rewrites": [
+            {
+            "source": "**",
+            "destination": "/index.html"
+            }
+        ]
+        }
+    ],
+    "storage": {
+        "rules": "storage.rules"
+    }
+    }
+    ```
+    > 2. In `./frontend/.firebaserc`, replace all text with the following:
+    ```
+    {
+        "projects": {
+            "default": "iclicker-web-c0d76"
+        },
+        "targets": {
+            "iclicker-web-c0d76": {
+                "hosting": {
+                    "official": [
+                        "webclicker"
+                    ],
+                    "test": [
+                        "iclicker-web-c0d76"
+                    ]
                 }
-            ]
-        },
-        "storage": {
-            "rules": "storage.rules"
+            }
         }
     }
     ```
-    > 2. In `./frontend/storage.rules`, add the following line at the top of the file:
-    ```
-    rules_version = '2';
-    ```
-- Deploy the project: `firebase deploy`
+- Deploy the project: `firebase deploy` for both URLs or `firebase deploy --only hosting:TARGET` to deploy to `hosting` or `official`.

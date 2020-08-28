@@ -115,12 +115,38 @@ export const signUp = (data) => {
 
     return new Promise((resolve, reject) => {
         firebase.auth().createUserWithEmailAndPassword(email, password).then(() => {
-            firebase.app().firestore().collection('accounts').doc(email).set({
-                firstName: firstName,
-                lastName: lastName,
-                identifier: identifier,
-                note: note,
-                type: type,
+            firebase.firestore().collection('courses').get().then(coursesSnapshot => {
+                let studentCourses = [];
+                coursesSnapshot.forEach(courseSnapshot => {
+                    let promise = courseSnapshot.ref.collection('students').doc(email).get().then(courseStudentSnapshot => {
+                        if (courseStudentSnapshot.exists) {
+                            return courseStudentSnapshot.ref.update({
+                                firstName: firstName,
+                                lastName: lastName,
+                                identifier: identifier,
+                            }).then(() => {
+                                return courseSnapshot.id;
+                            })
+                        }
+
+                        return;
+                    });
+                    studentCourses.push(promise);
+                });
+
+                return Promise.all(studentCourses).then(result => {
+                    return result.filter(element => element !== undefined);
+                });
+            }).then(studentCourses => {
+                console.log(studentCourses);
+                firebase.app().firestore().collection('accounts').doc(email).set({
+                    firstName: firstName,
+                    lastName: lastName,
+                    identifier: identifier,
+                    studentCourses: studentCourses,
+                    note: note,
+                    type: type,
+                });
             }).then(() => {
                 firebase.app().firestore().collection('accounts').doc(email).get().then(userDoc => {
                     let account = {};
@@ -394,39 +420,44 @@ export const fetchCourseStudents = (data) => {
 export const setCourseStudents = (data) => {
     let courseID = data.courseID;
     let students = data.students;
-    let deleted = data.deleted;
+    let deletedStudents = data.initialStudents.filter(student => students[student] === undefined);
+    console.log(students, deletedStudents);
 
     return new Promise((resolve, reject) => {
         let promises = [];
 
-        for (let studentID in deleted) {
+        for (let studentID of deletedStudents) {
             let promiseDeleteFromCourse = firebase.firestore().collection('courses').doc(courseID).collection('students').doc(studentID).delete();
             promises.push(promiseDeleteFromCourse);
-            let promiseDeleteFromStudent = new Promise((resolve, reject) => {
-                firebase.firestore().collection('accounts').doc(studentID).get().then((studentSnapshot) => {
-                    let studentCourses = studentSnapshot.get('studentCourses');
-                    studentCourses.splice(studentCourses.indexOf(courseID), 1);
-                    resolve(studentCourses);
-                }).catch(err => {
-                    console.log(err);
-                })
-            }).then(studentCourses => {
-                return firebase.firestore().collection('accounts').doc(studentID).update({
-                    studentCourses: studentCourses,
-                });
-            }).catch(err => {
-                console.log(err);
+            let promiseDeleteFromStudent = firebase.firestore().collection('accounts').doc(studentID).get().then((studentSnapshot) => {
+                if (studentSnapshot.exists) {
+                    firebase.firestore().collection('accounts').doc(studentID).update({
+                        studentCourses: firebase.firestore.FieldValue.arrayRemove(courseID)
+                    });
+                }
             });
             promises.push(promiseDeleteFromStudent);
         }
 
         for(let studentID in students) {
-            let promise = firebase.firestore().collection('courses').doc(courseID).collection('students').doc(studentID).set({
-                firstName: students[studentID]['firstName'],
-                lastName: students[studentID]['lastName'],
-                identifier: students[studentID]['identifier'] === undefined ? '' : students[studentID]['identifier'],
-                iClicker: students[studentID]['iClicker'] === undefined ? '' : students[studentID]['iClicker'],
-                studentCategories: students[studentID]['studentCategories'],
+
+            let courseStudentRef = firebase.firestore().collection('courses').doc(courseID).collection('students').doc(studentID);
+            let promise = courseStudentRef.get().then(courseStudentDoc => {
+                if (students[studentID]['firstName'] !== undefined && !courseStudentDoc.exists)  {
+                    return firebase.firestore().collection('accounts').doc(studentID).update({
+                        studentCourses: firebase.firestore.FieldValue.arrayUnion(courseID),
+                    });
+                } else {
+                    return;
+                }
+            }).then(() => {
+                courseStudentRef.set({
+                    firstName: students[studentID]['firstName'] === undefined ? '' : students[studentID]['firstName'],
+                    lastName: students[studentID]['lastName'] === undefined ? '' : students[studentID]['lastName'],
+                    identifier: students[studentID]['identifier'] === undefined ? '' : students[studentID]['identifier'],
+                    iClicker: students[studentID]['iClicker'] === undefined ? '' : students[studentID]['iClicker'],
+                    studentCategories: students[studentID]['studentCategories'],
+                });
             });
             promises.push(promise);
         }
@@ -898,3 +929,9 @@ export const saveStudentCourse = (data) => {
         });
     });
 };
+
+export const fetchAccountDoc = (data) => {
+    let accountID = data.accountID;
+
+    return firebase.firestore().collection('accounts').doc(accountID).get();
+}

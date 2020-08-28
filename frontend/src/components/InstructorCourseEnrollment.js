@@ -25,14 +25,8 @@ import NavigateBeforeOutlinedIcon from '@material-ui/icons/NavigateBeforeOutline
 import AttachFileOutlinedIcon from '@material-ui/icons/AttachFileOutlined';
 import GetAppOutlinedIcon from '@material-ui/icons/GetAppOutlined';
 import LinearProgress from '@material-ui/core/LinearProgress';
-import Snackbar from '@material-ui/core/Snackbar';
-import MuiAlert from '@material-ui/lab/Alert';
 
-import {fetchCourseStudents, setCourseStudents} from "../firebaseApi";
-
-function Alert(props) {
-  return <MuiAlert elevation={6} variant="filled" {...props} />;
-}
+import {fetchCourseStudents, setCourseStudents, fetchAccountDoc} from "../firebaseApi";
 
 const styles = theme => ({
 });
@@ -44,12 +38,8 @@ class InstructorCourseEnrollment extends Component {
 
         this.state = {
             studentsData: null,
-            deletedStudents: [],
+            currentStudents: null,
             loading: false,
-            error: false,
-            errorStatus: null,
-            errorSeverity: null,
-            errorMessage: '',
         };
 
         this.studentFileRef = React.createRef();
@@ -65,7 +55,10 @@ class InstructorCourseEnrollment extends Component {
 
             fetchCourseStudents(data).then(students => {
                 let studentsData = this.convertStudentsToTable(students, this.props.course.courseCategories);
-                this.setState({studentsData: studentsData});
+                this.setState({
+                    studentsData: studentsData,
+                    currentStudents: students,
+                });
             });
         }
     }
@@ -81,12 +74,18 @@ class InstructorCourseEnrollment extends Component {
 
                 fetchCourseStudents(data).then(students => {
                     let studentsData = this.convertStudentsToTable(students, this.props.course.courseCategories);
-                    this.setState({studentsData: studentsData});
+                    this.setState({
+                        studentsData: studentsData,
+                        currentStudents: students,
+                    });
                 });
             }
         }
     }
 
+
+    // students is an object of objects for each student
+    // studentsData is an array of objects for each student
     convertStudentsToTable(students, courseCategories) {
         let studentsData = [];
 
@@ -109,6 +108,9 @@ class InstructorCourseEnrollment extends Component {
         return studentsData;
     }
 
+    // studentsData is an array of objects for each student
+    // Note that studentsData has a tableData field for each student (which should be ignored)
+    // students is an object of objects for each student
     convertTableToStudents(studentsData, courseCategories) {
         let students = {};
 
@@ -161,7 +163,7 @@ class InstructorCourseEnrollment extends Component {
                     <MaterialTable
                         title={this.props.course.courseName + ' Students'}
                         columns={[
-                            {title: 'Email', field: 'studentID', editable: 'never'},
+                            {title: 'Email', field: 'studentID', editable: 'onAdd'},
                             {title: 'Last Name', field: 'lastName', editable: 'never'},
                             {title: 'First Name', field: 'firstName', editable: 'never'},
                             {title: 'Student Identifier', field: 'identifier', editable: 'never'},
@@ -178,6 +180,7 @@ class InstructorCourseEnrollment extends Component {
                         )}
                         data={this.state.studentsData === null ? [] : this.state.studentsData}
                         icons={{
+                            Add: AddOutlinedIcon,
                             Delete: DeleteOutlinedIcon,
                             Edit: EditOutlinedIcon,
                             Check: DoneOutlinedIcon,
@@ -265,12 +268,30 @@ class InstructorCourseEnrollment extends Component {
                             }
                         ]}
                         editable={{
-                            onRowUpdate: (newData, oldData) => new Promise(resolve => {
-                                if (Object.keys(newData).length - 5 !== Object.keys(this.props.course.courseCategories).length) {
+                            onRowAdd: newData => new Promise(resolve => {
+                                if (this.state.studentsData.findIndex(student => student.studentID === newData.studentID) !== -1) {
                                     resolve();
                                     return;
                                 }
 
+                                let data = {
+                                    accountID: newData.studentID,
+                                };
+                                fetchAccountDoc(data).then(studentDoc => {
+                                    if (studentDoc.exists) {
+                                        newData['firstName'] = studentDoc.get('firstName');
+                                        newData['lastName'] = studentDoc.get('lastName');
+                                        newData['identifier'] = studentDoc.get('identifier');
+                                    }
+
+                                    let newStudentsData = this.state.studentsData;
+                                    newStudentsData.push(newData);
+                                    this.setState({studentsData: newStudentsData});
+                                }).then(() => {
+                                    resolve();
+                                });
+                            }),
+                            onRowUpdate: (newData, oldData) => new Promise(resolve => {
                                 let data = this.state.studentsData;
                                 data[data.indexOf(oldData)] = newData;
                                 this.setState({studentsData: data});
@@ -280,10 +301,8 @@ class InstructorCourseEnrollment extends Component {
                             onRowDelete: oldData => new Promise(resolve => {
                                 let data = this.state.studentsData;
                                 data.splice(data.indexOf(oldData), 1);
-                                let deletedData = [...this.state.deletedStudents, oldData];
                                 this.setState({
                                     studentsData: data,
-                                    deletedStudents: deletedData,
                                 });
 
                                 resolve();
@@ -317,84 +336,58 @@ class InstructorCourseEnrollment extends Component {
                                     // Convert student json to table format
                                     let studentsData = [];
                                     for (let row of studentJson) {
-                                        let studentID = row['Email'];
-                                        let studentIndex = this.state.studentsData.findIndex(student => student['studentID'] === studentID);
+                                        studentsData.push(new Promise(resolve => {
+                                            let studentID = row['Email'];
+                                            let data = {
+                                                accountID: studentID,
+                                            };
+                                            fetchAccountDoc(data).then(studentDoc => {
+                                                let data = {};
+                                                data['studentID'] = studentID;
 
-                                        if (this.state.studentsData[studentIndex] !== undefined) {
-                                            let data = {};
-
-                                            data['studentID'] = studentID;
-
-                                            Object.entries(row).forEach(([field, fieldInfo]) => {
-                                                switch (field) {
-                                                    case 'First Name':
-                                                        data['firstName'] = fieldInfo;
-                                                        break;
-                                                    case 'Last Name':
-                                                        data['lastName'] = fieldInfo;
-                                                        break;
-                                                    case 'Student identifier':
-                                                        data['identifier'] = fieldInfo;
-                                                        break;
-                                                    case 'iClicker ID':
-                                                        data['iClicker'] = fieldInfo;
-                                                        break;
-                                                    case 'Database ID':
-                                                        break;
-                                                    default:
-                                                        let categoryName = field.split(" (Options: ")[0];
-                                                        let categoryInfo = this.props.course.courseCategories[categoryName];
-                                                        if (categoryInfo !== undefined) {
-                                                            data[categoryName] = categoryInfo.indexOf(fieldInfo);
-                                                        }
-                                                        break;
+                                                if (studentDoc.exists) {
+                                                    data['firstName'] = studentDoc.get('firstName');
+                                                    data['lastName'] = studentDoc.get('lastName');
+                                                    data['identifier'] = studentDoc.get('identifier');
                                                 }
-                                            });
 
-                                            studentsData.push(data);
-                                        } else {
-                                            let errorMessage = 'Row ' + (studentJson.indexOf(row) + 1) + ': Student not found.'
-                                            this.setState({
-                                                error: true,
-                                                errorSeverity: 'error',
-                                                errorMessage: errorMessage,
-                                            });
-                                            return;
-                                        }
+                                                Object.entries(row).forEach(([field, fieldInfo]) => {
+                                                    switch (field) {
+                                                        case 'iClicker ID':
+                                                            data['iClicker'] = fieldInfo;
+                                                            break;
+                                                        case 'First Name':
+                                                        case 'Last Name':
+                                                        case 'Student identifier':
+                                                        case 'Email':
+                                                            break;
+                                                        default:
+                                                            let categoryName = field.split(" (Options: ")[0];
+                                                            let categoryInfo = this.props.course.courseCategories[categoryName];
+                                                            if (categoryInfo !== undefined) {
+                                                                data[categoryName] = categoryInfo.indexOf(fieldInfo);
+                                                            }
+                                                            break;
+                                                    }
+                                                });
+
+                                                return data;
+                                            }).then(data => {
+                                                resolve(data);
+                                            })
+                                        }));
                                     }
 
-                                    this.setState({studentsData: studentsData});
+                                    Promise.all(studentsData).then(data => {
+                                        this.setState({studentsData: data});
+                                    })
+
                                 };
 
                                 reader.readAsArrayBuffer(file);
                             }
                         }}
                     />
-
-                    <Snackbar
-                        open={this.state.error}
-                        autoHideDuration={5000}
-                        onClose={(event, reason) => {
-                            if (reason !== 'clickaway') {
-                                this.setState({
-                                    error: false,
-                                });
-                            }
-                        }}
-                    >
-                        <Alert
-                            onClose={(event, reason) => {
-                                if (reason !== 'clickaway') {
-                                    this.setState({
-                                        error: false,
-                                    });
-                                }
-                            }}
-                            severity={this.state.errorSeverity}
-                        >
-                            {this.state.errorMessage}
-                        </Alert>
-                    </Snackbar>
                 </DialogContent>
 
                 <DialogActions>
@@ -413,12 +406,11 @@ class InstructorCourseEnrollment extends Component {
                             this.setState({loading: true});
 
                             let students = this.convertTableToStudents(this.state.studentsData, this.props.course.courseCategories);
-                            let deleted = this.convertTableToStudents(this.state.deletedStudents, this.props.course.courseCategories);
 
                             let data = {
                                 courseID: this.props.course.courseID,
                                 students: students,
-                                deleted: deleted
+                                initialStudents: Object.keys(this.state.currentStudents),
                             };
 
                             setCourseStudents(data).then(() => {
